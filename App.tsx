@@ -70,9 +70,7 @@ const App: React.FC = () => {
       setNotificationPermission(permission);
       if (permission === 'granted') {
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        triggerNotification("Notifications active!", "success");
-        // Test immediately on Android
-        setTimeout(() => triggerNotification("System verified. Good luck!", "success", true), 1000);
+        triggerNotification("Notifications active!", "success", true);
       }
     }
   };
@@ -125,24 +123,32 @@ const App: React.FC = () => {
     
     if (system) {
       playNotificationSound();
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      if (navigator.vibrate) {
+        try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+      }
 
       if (notificationPermission === 'granted') {
         try {
-          // On Android Chrome, we MUST use ServiceWorkerRegistration.showNotification
           if ('serviceWorker' in navigator) {
-            const reg = await navigator.serviceWorker.ready;
-            reg.showNotification('MedQuest AI', {
-              body: msg,
-              icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
-              badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
-              vibrate: [200, 100, 200],
-              tag: 'medquest-alert',
-              renotify: true,
-              requireInteraction: true
-            } as any);
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+              // unique tag forces Android to show a new heads-up notification
+              const notificationTag = 'medquest-' + Date.now();
+              reg.showNotification('MedQuest AI', {
+                body: msg,
+                icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+                badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+                vibrate: [200, 100, 200],
+                tag: notificationTag,
+                renotify: true,
+                requireInteraction: true,
+                silent: false
+              } as any);
+            } else {
+              new Notification('MedQuest AI', { body: msg, tag: 'medquest-alert' });
+            }
           } else {
-            new Notification('MedQuest AI', { body: msg });
+            new Notification('MedQuest AI', { body: msg, tag: 'medquest-alert' });
           }
         } catch (e) {
           console.error("System notification error:", e);
@@ -224,7 +230,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto custom-scrollbar relative">
         {currentView === View.MENU && (
-          <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} onTest={() => triggerNotification("Android System Notification Test", "success", true)} />
+          <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} onTest={() => triggerNotification("System Link Verified - Notification Active", "success", true)} />
         )}
         {currentView === View.DASHBOARD && activeSchedule && (
           <DashboardView schedule={activeSchedule} onGoToEditor={() => setCurrentView(View.EDITOR)} onStartTutor={(s) => { setActiveSubject(s); setCurrentView(View.AI_TUTOR); }} />
@@ -255,8 +261,8 @@ const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, set
         <p className="text-slate-400 text-[9px] uppercase tracking-widest">Protocol Sync</p>
       </div>
       <div className="flex gap-2">
-        <button onClick={onTest} title="Test Android Notification" className="bg-slate-200 text-slate-600 p-1.5 rounded-lg hover:bg-slate-300 transition-all">
-          <TestTube size={14} />
+        <button onClick={onTest} title="Test Android Notification" className="bg-slate-200 text-slate-600 p-1.5 rounded-lg hover:bg-slate-300 transition-all flex items-center gap-1">
+          <TestTube size={14} /> <span className="text-[8px] font-black uppercase">Test</span>
         </button>
         {!isCreating && (
           <button onClick={() => setIsCreating(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-lg shadow-blue-500/10 uppercase">
@@ -289,13 +295,23 @@ const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, set
         </div>
       ))}
       {schedules.length === 0 && !isCreating && (
-        <div className="col-span-full py-12 text-center">
+        <div className="col-span-full py-12 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
           <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
             <Calendar size={32} />
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No plans initialized</p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">No plans initialized</p>
+          <p className="text-slate-300 text-[8px] uppercase tracking-tighter">Click "New Plan" to begin command setup</p>
         </div>
       )}
+    </div>
+    <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+      <div className="flex gap-3">
+        <div className="text-blue-500 shrink-0"><Info size={18} /></div>
+        <div className="space-y-1">
+          <h4 className="text-[10px] font-black text-blue-900 uppercase">Android Optimization</h4>
+          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu > Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions.</p>
+        </div>
+      </div>
     </div>
   </div>
 );
