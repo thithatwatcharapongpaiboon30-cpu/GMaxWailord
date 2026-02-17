@@ -1,0 +1,7 @@
+{
+  "name": "MedQuest AI Study Assistant",
+  "description": "An advanced AI-powered study companion for medical entrance exams with subject-specific tutors, schedule management, and real-time study notifications.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
