@@ -7,7 +7,7 @@ import {
   ChevronLeft, LayoutDashboard, Clock, 
   Settings, Bell, Play, CheckCircle, 
   ChevronRight, BrainCircuit, Volume2, Pause, RotateCcw,
-  Zap, BookOpen, X, BellOff, Info, Share
+  Zap, BookOpen, X, BellOff, Info, Share, TestTube
 } from 'lucide-react';
 
 const STORAGE_KEY = 'med_quest_v5_schedules';
@@ -71,6 +71,8 @@ const App: React.FC = () => {
       if (permission === 'granted') {
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         triggerNotification("Notifications active!", "success");
+        // Test immediately on Android
+        setTimeout(() => triggerNotification("System verified. Good luck!", "success", true), 1000);
       }
     }
   };
@@ -127,20 +129,23 @@ const App: React.FC = () => {
 
       if (notificationPermission === 'granted') {
         try {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            registration.showNotification('MedQuest AI', {
+          // On Android Chrome, we MUST use ServiceWorkerRegistration.showNotification
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification('MedQuest AI', {
               body: msg,
               icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
               badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
               vibrate: [200, 100, 200],
-              tag: 'study-alert'
+              tag: 'medquest-alert',
+              renotify: true,
+              requireInteraction: true
             } as any);
           } else {
             new Notification('MedQuest AI', { body: msg });
           }
         } catch (e) {
-          console.error("Notification failed", e);
+          console.error("System notification error:", e);
         }
       }
     }
@@ -219,7 +224,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto custom-scrollbar relative">
         {currentView === View.MENU && (
-          <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} />
+          <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} onTest={() => triggerNotification("Android System Notification Test", "success", true)} />
         )}
         {currentView === View.DASHBOARD && activeSchedule && (
           <DashboardView schedule={activeSchedule} onGoToEditor={() => setCurrentView(View.EDITOR)} onStartTutor={(s) => { setActiveSubject(s); setCurrentView(View.AI_TUTOR); }} />
@@ -242,18 +247,23 @@ const NavButton: React.FC<{icon: React.ReactNode, active: boolean, onClick: () =
   </button>
 );
 
-const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, setIsCreating, newName, setNewName, onCreate, onDelete}) => (
+const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, setIsCreating, newName, setNewName, onCreate, onDelete, onTest}) => (
   <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
     <div className="flex justify-between items-end mb-6">
       <div>
         <h2 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Command Center</h2>
         <p className="text-slate-400 text-[9px] uppercase tracking-widest">Protocol Sync</p>
       </div>
-      {!isCreating && (
-        <button onClick={() => setIsCreating(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-lg shadow-blue-500/10 uppercase">
-          <Plus size={12} /> New Plan
+      <div className="flex gap-2">
+        <button onClick={onTest} title="Test Android Notification" className="bg-slate-200 text-slate-600 p-1.5 rounded-lg hover:bg-slate-300 transition-all">
+          <TestTube size={14} />
         </button>
-      )}
+        {!isCreating && (
+          <button onClick={() => setIsCreating(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-lg shadow-blue-500/10 uppercase">
+            <Plus size={12} /> New Plan
+          </button>
+        )}
+      </div>
     </div>
     {isCreating && (
       <div className="mb-6 bg-white p-4 rounded-xl border-2 border-blue-500 shadow-xl">
