@@ -4,16 +4,16 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
-    // Initializing with process.env.API_KEY as per instructions
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Use Pro model for all subjects to ensure "Advanced" tutoring capability
+    // Advanced reasoning for STEM/Medical subjects
     const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
       ? 'gemini-3-pro-preview' 
       : 'gemini-3-flash-preview';
 
     const conversationHistory = [
-      ...history.slice(-10).map(h => ({
+      ...history.slice(-8).map(h => ({
         role: h.role,
         parts: [{ text: h.content }]
       })),
@@ -30,14 +30,14 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
     });
 
     if (!response || !response.text) {
-      throw new Error("Invalid API Response");
+      throw new Error("Empty response from AI specialist node");
     }
 
     return response.text;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    // On Vercel, ensure the API_KEY environment variable is set in Project Settings.
-    return "The specialist node is temporarily unavailable. Please verify connection and try again.";
+    // On Vercel, if this triggers, check Vercel Dashboard > Project Settings > Environment Variables
+    return "Node connection interrupted. Please ensure your API key is configured and try again.";
   }
 };
 
@@ -47,21 +47,21 @@ export const playNotificationSound = () => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(660, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
     gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.3);
+    osc.stop(ctx.currentTime + 0.2);
   } catch (e) {}
 };
 
 export const speakText = async (text: string) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text.slice(0, 300) }] }],
