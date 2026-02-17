@@ -4,11 +4,10 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
-    // Correctly initialize with process.env.API_KEY as per instructions
+    // Initializing with process.env.API_KEY as per instructions
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     
-    // Use Pro model for all subjects to satisfy the "Advanced AI Assistant" request
-    // or specifically for STEM subjects to ensure high-quality reasoning.
+    // Use Pro model for all subjects to ensure "Advanced" tutoring capability
     const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
       ? 'gemini-3-pro-preview' 
       : 'gemini-3-flash-preview';
@@ -37,11 +36,8 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
     return response.text;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    // On Vercel, check if API_KEY is set in Environment Variables.
-    if (!process.env.API_KEY) {
-      return "Critical: API Key is missing. Please configure it in your environment settings.";
-    }
-    return "The specialist node is temporarily unavailable. Please try again in a moment.";
+    // On Vercel, ensure the API_KEY environment variable is set in Project Settings.
+    return "The specialist node is temporarily unavailable. Please verify connection and try again.";
   }
 };
 

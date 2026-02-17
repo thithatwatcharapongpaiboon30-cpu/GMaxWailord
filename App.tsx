@@ -435,13 +435,13 @@ const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onS
   if (!activeSubject) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white">
-        <div className="bg-slate-900 p-8 rounded-3xl mb-8 text-blue-500 shadow-2xl animate-pulse"><BrainCircuit size={48} /></div>
-        <h2 className="text-2xl font-black text-slate-800 mb-4 uppercase tracking-tighter">Specialist Selection</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl px-4">
+        <div className="bg-slate-900 p-6 rounded-3xl mb-8 text-blue-500 shadow-2xl animate-pulse"><BrainCircuit size={40} /></div>
+        <h2 className="text-xl font-black text-slate-800 mb-6 uppercase tracking-tighter">Specialist Selection</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-xl px-4">
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-6 rounded-2xl border border-slate-100 hover:border-blue-500 hover:shadow-xl transition-all flex flex-col items-center gap-3 group active:scale-95">
-              <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{SUBJECT_INFO[s].icon}</span>
-              <span className="font-black text-slate-800 text-xs tracking-tight uppercase">{s}</span>
+            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-blue-500 hover:shadow-lg transition-all flex flex-col items-center gap-2 group active:scale-95">
+              <span className="text-3xl group-hover:scale-110 transition-transform duration-300">{SUBJECT_INFO[s].icon}</span>
+              <span className="font-black text-slate-800 text-[10px] tracking-tight uppercase">{s}</span>
             </button>
           ))}
         </div>
@@ -457,63 +457,63 @@ const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onS
 
   return (
     <div className="h-full flex flex-col md:flex-row bg-white overflow-hidden animate-in zoom-in-95 duration-500">
-      <div className="w-full md:w-72 bg-slate-50 border-r border-slate-100 p-6 flex flex-col justify-between shrink-0 overflow-y-auto custom-scrollbar">
+      <div className="w-full md:w-60 bg-slate-50 border-r border-slate-100 p-5 flex flex-col justify-between shrink-0 overflow-y-auto custom-scrollbar">
         <div>
-          <button onClick={() => setActiveSubject(null as any)} className="mb-8 group p-2 hover:bg-slate-200 rounded-lg transition-all flex items-center gap-2 font-black text-slate-400 text-[10px] tracking-widest uppercase">
-            <ChevronLeft size={16} /> Back
+          <button onClick={() => setActiveSubject(null as any)} className="mb-6 group p-2 hover:bg-slate-200 rounded-lg transition-all flex items-center gap-2 font-black text-slate-400 text-[9px] tracking-widest uppercase">
+            <ChevronLeft size={14} /> Back
           </button>
-          <div className="mb-10 text-center">
-            <div className={`w-24 h-24 rounded-3xl mx-auto flex items-center justify-center text-4xl shadow-xl mb-4 ring-8 ring-white ${SUBJECT_INFO[activeSubject].color} text-white`}>{SUBJECT_INFO[activeSubject].icon}</div>
-            <h3 className="text-lg font-black text-slate-800 tracking-tighter uppercase">{activeSubject}</h3>
-            <p className="text-blue-500 text-[9px] font-black uppercase tracking-[0.2em] mt-2 opacity-50">Active Link</p>
+          <div className="mb-8 text-center">
+            <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg mb-3 ring-4 ring-white ${SUBJECT_INFO[activeSubject].color} text-white`}>{SUBJECT_INFO[activeSubject].icon}</div>
+            <h3 className="text-base font-black text-slate-800 tracking-tighter uppercase">{activeSubject}</h3>
+            <p className="text-blue-500 text-[8px] font-black uppercase tracking-[0.2em] mt-1 opacity-50">Active Link</p>
           </div>
-          <div className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 text-center space-y-4">
-            <div className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums">{formatTime(timer.timeLeft)}</div>
+          <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-100 text-center space-y-3">
+            <div className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums">{formatTime(timer.timeLeft)}</div>
             <div className="flex justify-center gap-2">
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: !t.isActive}))} className={`p-3 rounded-xl font-bold shadow-lg transition-all ${timer.isActive ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white shadow-blue-500/40'}`}>
-                {timer.isActive ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+              <button onClick={() => setTimer((t:any) => ({...t, isActive: !t.isActive}))} className={`p-2 rounded-lg font-bold shadow transition-all ${timer.isActive ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white shadow-blue-500/30'}`}>
+                {timer.isActive ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
               </button>
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: false, timeLeft: 25 * 60, mode: 'study'}))} className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-slate-200"><RotateCcw size={20} /></button>
+              <button onClick={() => setTimer((t:any) => ({...t, isActive: false, timeLeft: 25 * 60, mode: 'study'}))} className="p-2 bg-slate-100 text-slate-400 rounded-lg hover:bg-slate-200"><RotateCcw size={18} /></button>
             </div>
           </div>
         </div>
       </div>
       <div className="flex-1 flex flex-col min-w-0 bg-white">
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px]">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar bg-[radial-gradient(#e2e8f0_0.5px,transparent_0.5px)] [background-size:20px:20px]">
           {history[activeSubject].map((msg:any) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}>
+              <div className={`max-w-[85%] rounded-xl px-4 py-2.5 shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}>
                 <p className="whitespace-pre-wrap leading-relaxed text-sm font-medium">{msg.content}</p>
-                <div className={`flex items-center gap-1 mt-2 opacity-30 text-[8px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={8} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className={`flex items-center gap-1 mt-1.5 opacity-30 text-[7px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={7} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </div>
           ))}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-none px-4 py-3 shadow-md flex gap-1.5">
-                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"></div>
+              <div className="bg-white border border-slate-100 rounded-xl rounded-tl-none px-3 py-2 shadow-sm flex gap-1">
+                <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"></div>
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
-        <div className="p-4 bg-white/95 backdrop-blur-xl border-t border-slate-100 safe-bottom">
-           <form className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all shadow-lg" 
+        <div className="p-3 bg-white/95 backdrop-blur-xl border-t border-slate-100 safe-bottom">
+           <form className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all shadow-sm" 
             onSubmit={(e) => {
               e.preventDefault();
               if (!input.trim() || isTyping) return;
               onSend(activeSubject, input);
               setInput('');
             }}>
-            <div className={`w-10 h-10 rounded-full ${SUBJECT_INFO[activeSubject].color} text-white flex items-center justify-center text-xl shadow-md hidden sm:flex shrink-0`}>{SUBJECT_INFO[activeSubject].icon}</div>
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={isTyping} placeholder={`Ask ${activeSubject} specialist...`} className="flex-1 bg-transparent px-2 py-3 outline-none font-bold text-slate-800 placeholder:text-slate-300 disabled:opacity-50 text-base" />
-            <button type="submit" disabled={!input.trim() || isTyping} className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md active:scale-90 flex items-center justify-center shrink-0">
-              <Play size={18} fill="currentColor" />
+            <div className={`w-8 h-8 rounded-lg ${SUBJECT_INFO[activeSubject].color} text-white flex items-center justify-center text-lg shadow hidden sm:flex shrink-0`}>{SUBJECT_INFO[activeSubject].icon}</div>
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={isTyping} placeholder={`Ask ${activeSubject}...`} className="flex-1 bg-transparent px-2 py-2 outline-none font-bold text-slate-800 placeholder:text-slate-300 disabled:opacity-50 text-sm" />
+            <button type="submit" disabled={!input.trim() || isTyping} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow active:scale-90 flex items-center justify-center shrink-0">
+              <Play size={16} fill="currentColor" />
             </button>
           </form>
-          <p className="text-[8px] font-black text-slate-200 uppercase tracking-[0.3em] mt-3 text-center">Neural Link Synced</p>
+          <p className="text-[7px] font-black text-slate-200 uppercase tracking-[0.3em] mt-2 text-center">Neural Link Synced</p>
         </div>
       </div>
     </div>
