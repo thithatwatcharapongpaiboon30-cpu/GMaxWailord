@@ -129,13 +129,14 @@ const App: React.FC = () => {
         try {
           const registration = await navigator.serviceWorker.getRegistration();
           if (registration) {
+            // Fix: Cast NotificationOptions to any as 'vibrate' is not recognized by the default NotificationOptions TypeScript definition for the browser context, even though it is valid for showNotification.
             registration.showNotification('MedQuest AI', {
               body: msg,
               icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
               badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
               vibrate: [200, 100, 200],
               tag: 'study-alert'
-            });
+            } as any);
           } else {
             // Fallback to basic notification if SW not ready
             new Notification('MedQuest AI', { body: msg });
@@ -423,84 +424,4 @@ const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onS
         <h2 className="text-[10px] font-black text-slate-800 mb-5 uppercase tracking-widest">Select AI Specialist</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-md px-2">
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-2.5 rounded-lg border border-slate-100 hover:border-blue-500 hover:shadow-md transition-all flex flex-col items-center gap-1 group active:scale-95">
-              <span className="text-xl group-hover:scale-105 transition-transform">{SUBJECT_INFO[s].icon}</span>
-              <span className="font-black text-slate-800 text-[8px] tracking-tight uppercase">{s}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="h-full flex flex-col md:flex-row bg-white overflow-hidden animate-in zoom-in-95 duration-500">
-      <div className="w-full md:w-48 bg-slate-50 border-r border-slate-100 p-3.5 flex flex-col justify-between shrink-0 overflow-y-auto custom-scrollbar">
-        <div>
-          <button onClick={() => setActiveSubject(null as any)} className="mb-4 group p-1 hover:bg-slate-200 rounded-md transition-all flex items-center gap-1.5 font-black text-slate-400 text-[8px] tracking-widest uppercase">
-            <ChevronLeft size={10} /> Back
-          </button>
-          <div className="mb-5 text-center">
-            <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-xl shadow-sm mb-2 ring-1 ring-white ${SUBJECT_INFO[activeSubject].color} text-white`}>{SUBJECT_INFO[activeSubject].icon}</div>
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-tighter">{activeSubject}</h3>
-            <p className="text-blue-500 text-[6px] font-black uppercase tracking-widest mt-0.5 opacity-40">Active Link</p>
-          </div>
-          <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 text-center space-y-1.5">
-            <div className="text-lg font-black text-slate-900 tracking-tighter tabular-nums">{formatTime(timer.timeLeft)}</div>
-            <div className="flex justify-center gap-1">
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: !t.isActive}))} className={`p-1 rounded-md transition-all ${timer.isActive ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white shadow-blue-500/20 shadow'}`}>
-                {timer.isActive ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
-              </button>
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: false, timeLeft: 25 * 60, mode: 'study'}))} className="p-1 bg-slate-100 text-slate-400 rounded-md hover:bg-slate-200"><RotateCcw size={12} /></button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 custom-scrollbar bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:12px_12px]">
-          {history[activeSubject].map((msg:any) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
-              <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
-                <p className="whitespace-pre-wrap leading-relaxed text-[11px] font-medium">{msg.content}</p>
-                <div className={`flex items-center gap-1 mt-1 opacity-20 text-[5px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={5} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-              </div>
-            </div>
-          ))}
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-slate-100 border border-slate-200 rounded-lg rounded-tl-none px-2 py-1 shadow-sm flex gap-0.5">
-                <div className="w-0.5 h-0.5 bg-blue-300 rounded-full animate-bounce"></div>
-                <div className="w-0.5 h-0.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                <div className="w-0.5 h-0.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-        <div className="p-2 bg-white/95 border-t border-slate-100 safe-bottom">
-           <form className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 focus-within:border-blue-400 focus-within:bg-white transition-all shadow-sm" 
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!input.trim() || isTyping) return;
-              onSend(activeSubject, input);
-              setInput('');
-            }}>
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={isTyping} placeholder={`Neural prompt for ${activeSubject}...`} className="flex-1 bg-transparent px-2 py-1 outline-none font-bold text-slate-800 placeholder:text-slate-300 disabled:opacity-50 text-[11px]" />
-            <button type="submit" disabled={!input.trim() || isTyping} className="bg-blue-600 text-white p-1.5 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md active:scale-95 shrink-0">
-              <Play size={12} fill="currentColor" />
-            </button>
-          </form>
-          <p className="text-[5px] font-black text-slate-200 uppercase tracking-widest mt-1 text-center">Protocol Synchronized</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default App;
+            
