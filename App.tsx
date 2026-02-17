@@ -18,7 +18,6 @@ const App: React.FC = () => {
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-  const [showIosGuide, setShowIosGuide] = useState(false);
   
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
     try {
@@ -63,20 +62,15 @@ const App: React.FC = () => {
     if ("Notification" in window) {
       setNotificationPermission(Notification.permission);
     }
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
-    if (isIos && !isStandalone) {
-      setTimeout(() => setShowIosGuide(true), 2000);
-    }
   }, []);
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
-      if (navigator.vibrate) navigator.vibrate(50);
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       if (permission === 'granted') {
-        triggerNotification("Notifications enabled!", "success");
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        triggerNotification("Notifications active!", "success");
       }
     }
   };
@@ -88,7 +82,7 @@ const App: React.FC = () => {
         setTimer(t => ({ ...t, timeLeft: t.timeLeft - 1 }));
       }, 1000);
     } else if (timer.timeLeft === 0) {
-      const msg = timer.mode === 'study' ? "Time for a break!" : "Break over! Let's study.";
+      const msg = timer.mode === 'study' ? "Break Protocol Initiated" : "Study Protocol Resumed";
       triggerNotification(msg, 'end', true);
       setTimer({
         isActive: false,
@@ -111,10 +105,10 @@ const App: React.FC = () => {
             const startId = `${session.id}-start`;
             const endId = `${session.id}-end`;
             if (session.startTime === currentTimeStr && lastNotified?.id !== startId) {
-              triggerNotification(`START: ${session.subject} session!`, 'start', true);
+              triggerNotification(`START: ${session.subject} node!`, 'start', true);
               setLastNotified({ id: startId, time: currentTimeStr });
             } else if (session.endTime === currentTimeStr && lastNotified?.id !== endId) {
-              triggerNotification(`FINISH: ${session.subject} session!`, 'end', true);
+              triggerNotification(`FINISH: ${session.subject} node!`, 'end', true);
               setLastNotified({ id: endId, time: currentTimeStr });
             }
           }
@@ -124,12 +118,31 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [schedules, lastNotified]);
 
-  const triggerNotification = (msg: string, type: 'start' | 'end' | 'success' | 'error', system: boolean = false) => {
+  const triggerNotification = async (msg: string, type: 'start' | 'end' | 'success' | 'error', system: boolean = false) => {
     setNotification({ message: msg, type });
+    
     if (system) {
       playNotificationSound();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
       if (notificationPermission === 'granted') {
-        try { new Notification("MedQuest Assistant", { body: msg, icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png' }); } catch (e) {}
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            registration.showNotification('MedQuest AI', {
+              body: msg,
+              icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+              badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+              vibrate: [200, 100, 200],
+              tag: 'study-alert'
+            });
+          } else {
+            // Fallback to basic notification if SW not ready
+            new Notification('MedQuest AI', { body: msg });
+          }
+        } catch (e) {
+          console.error("Notification failed", e);
+        }
       }
     }
     setTimeout(() => setNotification(null), 5000);
@@ -178,7 +191,7 @@ const App: React.FC = () => {
           <div className="bg-blue-600 p-1 rounded-lg group-hover:scale-105 transition-transform">
             <BrainCircuit className="text-white" size={16} />
           </div>
-          <h1 className="text-xs font-black tracking-tight hidden sm:block">MedQuest AI</h1>
+          <h1 className="text-xs font-black tracking-tight hidden sm:block uppercase">MedQuest AI</h1>
         </div>
         <nav className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
           <NavButton icon={<LayoutDashboard size={14}/>} active={currentView === View.DASHBOARD} onClick={() => activeSchedule ? setCurrentView(View.DASHBOARD) : setCurrentView(View.MENU)} />
@@ -234,7 +247,7 @@ const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, set
   <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
     <div className="flex justify-between items-end mb-6">
       <div>
-        <h2 className="text-xl font-black text-slate-800">Command Center</h2>
+        <h2 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Command Center</h2>
         <p className="text-slate-400 text-[9px] uppercase tracking-widest">Protocol Sync</p>
       </div>
       {!isCreating && (

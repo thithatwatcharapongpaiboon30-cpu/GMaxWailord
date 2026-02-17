@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MedQuest AI Assistant</title>
     
+    <!-- PWA / Android Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3070/3070044.png">
+    
     <!-- Apple PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -33,20 +38,11 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        /* Fix for iOS safe areas */
         .safe-bottom {
             padding-bottom: env(safe-area-inset-bottom);
         }
         .safe-top {
             padding-top: env(safe-area-inset-top);
-        }
-        
-        @keyframes fade-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-up {
-          animation: fade-up 0.5s ease-out forwards;
         }
     </style>
 <script type="importmap">
