@@ -4,8 +4,8 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-    // Use Pro model for STEM/Reasoning subjects for higher quality answers
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Use Pro model for STEM/Reasoning subjects for higher quality answers as an "advanced" assistant
     const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
       ? 'gemini-3-pro-preview' 
       : 'gemini-3-flash-preview';
@@ -52,7 +52,7 @@ export const playNotificationSound = () => {
 
 export const speakText = async (text: string) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text.slice(0, 500) }] }],
