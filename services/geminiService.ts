@@ -4,16 +4,17 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
-    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+    // Standard initialization per instructions
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Advanced reasoning for STEM/Medical subjects
+    // Choose model based on complexity (STEM subjects use Pro)
     const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
       ? 'gemini-3-pro-preview' 
       : 'gemini-3-flash-preview';
 
+    // Limit history length to prevent context window issues
     const conversationHistory = [
-      ...history.slice(-8).map(h => ({
+      ...history.slice(-6).map(h => ({
         role: h.role,
         parts: [{ text: h.content }]
       })),
@@ -26,18 +27,19 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
       config: {
         systemInstruction: SYSTEM_PROMPTS[subject],
         temperature: 0.7,
+        topP: 0.9,
       }
     });
 
     if (!response || !response.text) {
-      throw new Error("Empty response from AI specialist node");
+      throw new Error("No text returned from node");
     }
 
     return response.text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    // On Vercel, if this triggers, check Vercel Dashboard > Project Settings > Environment Variables
-    return "Node connection interrupted. Please ensure your API key is configured and try again.";
+    console.error("Gemini AI Session Error:", error);
+    // If you see this on Vercel, ensure the API_KEY env var is set in the dashboard.
+    return "The specialist node is temporarily unavailable. Check your connection or API configuration and try again.";
   }
 };
 
@@ -64,7 +66,7 @@ export const speakText = async (text: string) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text.slice(0, 300) }] }],
+      contents: [{ parts: [{ text: text.slice(0, 250) }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
