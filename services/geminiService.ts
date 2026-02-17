@@ -1,19 +1,19 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Subject } from "../types";
 import { SYSTEM_PROMPTS } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
-    const model = 'gemini-3-flash-preview';
-    const systemInstruction = SYSTEM_PROMPTS[subject];
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    // Use Pro model for STEM/Reasoning subjects for higher quality answers
+    const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
+      ? 'gemini-3-pro-preview' 
+      : 'gemini-3-flash-preview';
 
     const chat = ai.chats.create({
-      model: model,
+      model: modelName,
       config: {
-        systemInstruction: systemInstruction,
+        systemInstruction: SYSTEM_PROMPTS[subject],
         temperature: 0.7,
       }
     });
@@ -32,10 +32,9 @@ export const playNotificationSound = () => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
-    // Clear, sharp chime sound
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1); // E6
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
     
     gain.gain.setValueAtTime(0, ctx.currentTime);
     gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
@@ -53,6 +52,7 @@ export const playNotificationSound = () => {
 
 export const speakText = async (text: string) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text.slice(0, 500) }] }],

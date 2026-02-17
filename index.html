@@ -39,6 +39,14 @@
         .safe-top {
             padding-top: env(safe-area-inset-top);
         }
+        
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+          animation: fade-up 0.5s ease-out forwards;
+        }
     </style>
 <script type="importmap">
 {
@@ -56,6 +64,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
