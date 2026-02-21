@@ -5,9 +5,9 @@ import { SYSTEM_PROMPTS } from "../constants";
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
     // Standard initialization per instructions
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
-      return "Specialist node configuration missing. If you are running this on Vercel, please ensure GEMINI_API_KEY is set in your Environment Variables.";
+      return "Specialist node configuration missing. Please ensure you have selected an API key in the 'Connect AI' menu or set GEMINI_API_KEY in your environment.";
     }
     const ai = new GoogleGenAI({ apiKey });
     
@@ -112,7 +112,7 @@ export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => 
 
 export const speakText = async (text: string) => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return false;
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
