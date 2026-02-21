@@ -10,6 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3070/3070044.png">
     <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css">
     
     <!-- Apple PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -44,6 +45,21 @@
         }
         .safe-top {
             padding-top: env(safe-area-inset-top);
+        }
+        .markdown-body p {
+            margin-bottom: 0.5rem;
+        }
+        .markdown-body p:last-child {
+            margin-bottom: 0;
+        }
+        .markdown-body ul, .markdown-body ol {
+            margin-left: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .katex-display {
+            margin: 0.5em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
     </style>
 <script type="importmap">

@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { View, Schedule, Subject, DayOfWeek, StudySession, ChatMessage, TimerState } from './types';
 import { SUBJECTS, DAYS, SUBJECT_INFO } from './constants';
 import { getTutorResponse, speakText, playNotificationSound, resumeAudio } from './services/geminiService';
@@ -362,7 +365,18 @@ const NavButton: React.FC<{icon: React.ReactNode, active: boolean, onClick: () =
   </button>
 );
 
-const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, setIsCreating, newName, setNewName, onCreate, onDelete, onTest}) => (
+const MenuView: React.FC<{
+  schedules: Schedule[], 
+  activeId: string | null, 
+  onSelect: (id: string) => void, 
+  isCreating: boolean, 
+  setIsCreating: (v: boolean) => void, 
+  newName: string, 
+  setNewName: (v: string) => void, 
+  onCreate: () => void, 
+  onDelete: (id: string) => void, 
+  onTest: () => void
+}> = ({schedules, activeId, onSelect, isCreating, setIsCreating, newName, setNewName, onCreate, onDelete, onTest}) => (
   <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
     <div className="flex justify-between items-end mb-6">
       <div>
@@ -425,7 +439,11 @@ const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, set
   </div>
 );
 
-const DashboardView: React.FC<any> = ({schedule, onGoToEditor, onStartTutor}) => {
+const DashboardView: React.FC<{
+  schedule: Schedule, 
+  onGoToEditor: () => void, 
+  onStartTutor: (s: Subject) => void
+}> = ({schedule, onGoToEditor, onStartTutor}) => {
   const now = new Date();
   const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
   const sortedSessions = [...schedule.sessions].filter((s: any) => s.day === currentDay).sort((a: any,b: any) => a.startTime.localeCompare(b.startTime));
@@ -556,21 +574,29 @@ const EditorView: React.FC<any> = ({schedule, onAdd, onRemove}) => {
   );
 };
 
-const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onSend, isTyping, timer, setTimer}) => {
+const TutorView: React.FC<{
+  activeSubject: Subject | null, 
+  setActiveSubject: (s: Subject | null) => void, 
+  history: Record<Subject, ChatMessage[]>, 
+  onSend: (s: Subject, t: string) => void, 
+  isTyping: boolean, 
+  timer: TimerState, 
+  setTimer: React.Dispatch<React.SetStateAction<TimerState>>
+}> = ({activeSubject, setActiveSubject, history, onSend, isTyping, timer, setTimer}) => {
   const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [history, isTyping, activeSubject]);
 
   if (!activeSubject) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-4 text-center bg-white">
-        <div className="bg-slate-900 p-3 rounded-xl mb-4 text-blue-500 shadow-md animate-pulse"><BrainCircuit size={28} /></div>
+      <div className="min-h-full flex flex-col items-center justify-start sm:justify-center p-6 text-center bg-white overflow-y-auto">
+        <div className="bg-slate-900 p-3 rounded-xl mb-4 text-blue-500 shadow-md animate-pulse mt-8 sm:mt-0"><BrainCircuit size={28} /></div>
         <h2 className="text-[10px] font-black text-slate-800 mb-5 uppercase tracking-widest">Select AI Specialist</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-md px-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl px-2 pb-12">
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-2.5 rounded-lg border border-slate-100 hover:border-blue-500 hover:shadow-md transition-all flex flex-col items-center gap-1 group active:scale-95">
-              <span className="text-xl group-hover:scale-105 transition-transform">{SUBJECT_INFO[s].icon}</span>
-              <span className="font-black text-slate-800 text-[8px] tracking-tight uppercase">{s}</span>
+            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-blue-500 hover:shadow-lg transition-all flex flex-col items-center gap-2 group active:scale-95">
+              <span className="text-2xl group-hover:scale-110 transition-transform">{SUBJECT_INFO[s].icon}</span>
+              <span className="font-black text-slate-800 text-[9px] tracking-tight uppercase">{s}</span>
             </button>
           ))}
         </div>
@@ -585,14 +611,14 @@ const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onS
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row bg-white overflow-hidden animate-in zoom-in-95 duration-500">
-      <div className="w-full md:w-48 bg-slate-50 border-r border-slate-100 p-3.5 flex flex-col justify-between shrink-0 overflow-y-auto custom-scrollbar">
+    <div className="h-full flex flex-col md:flex-row bg-white animate-in zoom-in-95 duration-500">
+      <div className="w-full md:w-48 bg-slate-50 border-r border-slate-100 p-4 flex flex-col shrink-0 overflow-y-auto custom-scrollbar max-h-[30vh] md:max-h-full">
         <div>
           <button onClick={() => setActiveSubject(null as any)} className="mb-4 group p-1 hover:bg-slate-200 rounded-md transition-all flex items-center gap-1.5 font-black text-slate-400 text-[8px] tracking-widest uppercase">
             <ChevronLeft size={10} /> Back
           </button>
           <div className="mb-5 text-center">
-            <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-xl shadow-sm mb-2 ring-1 ring-white ${SUBJECT_INFO[activeSubject].color} text-white`}>{SUBJECT_INFO[activeSubject].icon}</div>
+            <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-xl shadow-sm mb-2 ring-1 ring-white ${SUBJECT_INFO[activeSubject as Subject].color} text-white`}>{SUBJECT_INFO[activeSubject as Subject].icon}</div>
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-tighter">{activeSubject}</h3>
             <p className="text-blue-500 text-[6px] font-black uppercase tracking-widest mt-0.5 opacity-40">Active Link</p>
           </div>
@@ -612,7 +638,11 @@ const TutorView: React.FC<any> = ({activeSubject, setActiveSubject, history, onS
           {history[activeSubject].map((msg:any) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
               <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
-                <p className="whitespace-pre-wrap leading-relaxed text-[11px] font-medium">{msg.content}</p>
+                <div className="leading-relaxed text-[11px] font-medium markdown-body">
+                  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
                 <div className={`flex items-center gap-1 mt-1 opacity-20 text-[5px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={5} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </div>
