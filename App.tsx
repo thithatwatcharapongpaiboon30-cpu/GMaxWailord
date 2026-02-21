@@ -283,12 +283,20 @@ const App: React.FC = () => {
                   This key is stored locally on your device and never sent to our servers.
                 </p>
               </div>
-              <button 
-                onClick={() => setShowSettings(false)} 
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
-              >
-                Save Configuration
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowSettings(false)} 
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+                >
+                  Save Configuration
+                </button>
+                <button 
+                  onClick={() => { setUserApiKey(''); localStorage.removeItem(API_KEY_STORAGE); }} 
+                  className="px-4 bg-slate-100 text-slate-400 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-50 hover:text-red-500 transition-all"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>

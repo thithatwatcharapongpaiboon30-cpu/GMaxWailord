@@ -4,26 +4,35 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = [], customApiKey?: string) => {
   try {
-    // Priority: 1. User-provided key, 2. Environment GEMINI_API_KEY, 3. Environment API_KEY
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
+    // Robust API Key detection
+    const envKey = (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "undefined") ? process.env.GEMINI_API_KEY : null;
+    const legacyEnvKey = (process.env.API_KEY && process.env.API_KEY !== "undefined") ? process.env.API_KEY : null;
+    
+    const apiKey = (customApiKey && customApiKey.trim()) || envKey || legacyEnvKey;
+
     if (!apiKey) {
-      return "Specialist node configuration missing. Please enter your API Key in the Settings menu or ensure GEMINI_API_KEY is set in your environment.";
+      return "Specialist node configuration missing. Please enter your API Key in the Settings (Gear Icon) or ensure GEMINI_API_KEY is set in your environment.";
     }
+
+    if (!apiKey.startsWith("AIza")) {
+      return "Invalid API Key format. Gemini API keys typically start with 'AIza'. Please check your key in the Settings menu.";
+    }
+
     const ai = new GoogleGenAI({ apiKey });
     
-    // Choose model based on complexity (STEM subjects use Pro)
-    const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
-      ? 'gemini-3.1-pro-preview' 
-      : 'gemini-3-flash-preview';
+    // Use stable model aliases
+    const modelName = 'gemini-flash-latest'; 
 
-    // Limit history length to prevent context window issues
-    const conversationHistory = [
-      ...history.slice(-6).map(h => ({
-        role: h.role,
+    // Ensure history roles are correct and alternating
+    const conversationHistory = history
+      .slice(-10) 
+      .map(h => ({
+        role: h.role === 'model' ? 'model' : 'user',
         parts: [{ text: h.content }]
-      })),
-      { role: 'user', parts: [{ text: message }] }
-    ];
+      }));
+    
+    // Add the current message
+    conversationHistory.push({ role: 'user', parts: [{ text: message }] });
 
     const response = await ai.models.generateContent({
       model: modelName,
@@ -31,19 +40,18 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
       config: {
         systemInstruction: SYSTEM_PROMPTS[subject],
         temperature: 0.7,
-        topP: 0.9,
       }
     });
 
     if (!response || !response.text) {
-      throw new Error("No text returned from node");
+      throw new Error("Empty response from AI node.");
     }
 
     return response.text;
   } catch (error: any) {
     console.error("Gemini AI Session Error:", error);
-    // If you see this on Vercel, ensure the API_KEY env var is set in the dashboard.
-    return "The specialist node is temporarily unavailable. Check your connection or API configuration and try again.";
+    const errorMsg = error?.message || "Unknown Error";
+    return `The specialist node encountered an error: ${errorMsg}. Please check your API key and network connection.`;
   }
 };
 
@@ -112,7 +120,10 @@ export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => 
 
 export const speakText = async (text: string, customApiKey?: string) => {
   try {
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const envKey = (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "undefined") ? process.env.GEMINI_API_KEY : null;
+    const legacyEnvKey = (process.env.API_KEY && process.env.API_KEY !== "undefined") ? process.env.API_KEY : null;
+    const apiKey = (customApiKey && customApiKey.trim()) || envKey || legacyEnvKey;
+    
     if (!apiKey) return false;
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
