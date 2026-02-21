@@ -4,18 +4,25 @@ import { SYSTEM_PROMPTS } from "../constants";
 
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = [], customApiKey?: string) => {
   try {
+    // Check if we are in the AI Studio preview environment
+    const isPreview = window.location.hostname.endsWith('.run.app') || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '0.0.0.0';
+
     // Robust API Key detection
     const envKey = (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "undefined") ? process.env.GEMINI_API_KEY : null;
     const legacyEnvKey = (process.env.API_KEY && process.env.API_KEY !== "undefined") ? process.env.API_KEY : null;
     
-    const apiKey = (customApiKey && customApiKey.trim()) || envKey || legacyEnvKey;
+    // ONLY use environment keys if we are in the preview/dev environment.
+    // On production (Vercel), we REQUIRE the manual customApiKey.
+    const apiKey = (customApiKey && customApiKey.trim()) || (isPreview ? (envKey || legacyEnvKey) : null);
 
     if (!apiKey) {
-      return "Specialist node configuration missing. Please enter your API Key in the Settings (Gear Icon) or ensure GEMINI_API_KEY is set in your environment.";
+      return "Access Denied: No API Key detected. To prevent high demand on the developer's account, please enter your OWN Gemini API Key in the Settings (Gear Icon) to use the AI Tutor.";
     }
 
     if (!apiKey.startsWith("AIza")) {
-      return "Invalid API Key format. Gemini API keys typically start with 'AIza'. Please check your key in the Settings menu.";
+      return "Invalid API Key format. Gemini API keys typically start with 'AIza'. Please update your key in the Settings menu.";
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -120,9 +127,13 @@ export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => 
 
 export const speakText = async (text: string, customApiKey?: string) => {
   try {
+    const isPreview = window.location.hostname.endsWith('.run.app') || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '0.0.0.0';
+
     const envKey = (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "undefined") ? process.env.GEMINI_API_KEY : null;
     const legacyEnvKey = (process.env.API_KEY && process.env.API_KEY !== "undefined") ? process.env.API_KEY : null;
-    const apiKey = (customApiKey && customApiKey.trim()) || envKey || legacyEnvKey;
+    const apiKey = (customApiKey && customApiKey.trim()) || (isPreview ? (envKey || legacyEnvKey) : null);
     
     if (!apiKey) return false;
     const ai = new GoogleGenAI({ apiKey });
