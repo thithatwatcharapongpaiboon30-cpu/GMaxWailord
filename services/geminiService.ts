@@ -5,11 +5,15 @@ import { SYSTEM_PROMPTS } from "../constants";
 export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
   try {
     // Standard initialization per instructions
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return "Specialist node configuration missing. If you are running this on Vercel, please ensure GEMINI_API_KEY is set in your Environment Variables.";
+    }
+    const ai = new GoogleGenAI({ apiKey });
     
     // Choose model based on complexity (STEM subjects use Pro)
     const modelName = ['Math', 'Physics', 'Chemistry', 'TPAT1'].includes(subject) 
-      ? 'gemini-3-pro-preview' 
+      ? 'gemini-3.1-pro-preview' 
       : 'gemini-3-flash-preview';
 
     // Limit history length to prevent context window issues
@@ -108,7 +112,9 @@ export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => 
 
 export const speakText = async (text: string) => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return false;
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text.slice(0, 250) }] }],
