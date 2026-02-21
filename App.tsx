@@ -12,12 +12,17 @@ import {
 
 const STORAGE_KEY = 'med_quest_v5_schedules';
 const ACTIVE_ID_KEY = 'med_quest_v5_active_id';
+const API_KEY_STORAGE = 'med_quest_v5_api_key';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.MENU);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [userApiKey, setUserApiKey] = useState<string>(() => {
+    return localStorage.getItem(API_KEY_STORAGE) || '';
+  });
+  const [showSettings, setShowSettings] = useState(false);
   
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
     try {
@@ -67,6 +72,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
   }, [schedules]);
+
+  useEffect(() => {
+    localStorage.setItem(API_KEY_STORAGE, userApiKey);
+  }, [userApiKey]);
 
   useEffect(() => {
     if (activeScheduleId) {
@@ -194,12 +203,12 @@ const App: React.FC = () => {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text, timestamp: Date.now() };
     setChatHistory(prev => ({ ...prev, [subject]: [...prev[subject], userMsg] }));
     setIsTyping(true);
-    const responseText = await getTutorResponse(subject, text, chatHistory[subject]);
+    const responseText = await getTutorResponse(subject, text, chatHistory[subject], userApiKey);
     setIsTyping(false);
     if (responseText) {
       const modelMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', content: responseText, timestamp: Date.now() };
       setChatHistory(prev => ({ ...prev, [subject]: [...prev[subject], modelMsg] }));
-      if (isVoiceEnabled) await speakText(responseText);
+      if (isVoiceEnabled) await speakText(responseText, userApiKey);
     }
   };
 
@@ -233,11 +242,14 @@ const App: React.FC = () => {
           <NavButton icon={<MessageSquare size={14}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
         </nav>
         <div className="flex items-center gap-0.5">
-           {!hasApiKey && (
+           {!hasApiKey && !userApiKey && (
              <button onClick={handleOpenKeySelector} className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[8px] font-black uppercase animate-pulse border border-amber-200 mr-1">
                <Zap size={10} fill="currentColor" /> Connect AI
              </button>
            )}
+           <button onClick={() => setShowSettings(!showSettings)} className={`p-1.5 rounded-md transition-all ${showSettings ? 'bg-slate-200 text-slate-800' : 'text-slate-400'}`}>
+            <Settings size={16} />
+          </button>
            <button onClick={requestNotificationPermission} className={`p-1.5 rounded-md transition-all ${notificationPermission === 'granted' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400'}`}>
             {notificationPermission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
           </button>
@@ -246,6 +258,41 @@ const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {showSettings && (
+        <div className="fixed inset-0 z-[110] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">System Configuration</h3>
+              <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600"><X size={18}/></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Gemini API Key</label>
+                <div className="relative">
+                  <input 
+                    type="password" 
+                    placeholder="AIza..." 
+                    value={userApiKey} 
+                    onChange={(e) => setUserApiKey(e.target.value)}
+                    className="w-full bg-slate-50 p-3 rounded-xl border-2 border-slate-100 focus:border-blue-500 outline-none font-mono text-xs transition-all"
+                  />
+                </div>
+                <p className="text-[8px] text-slate-400 leading-relaxed">
+                  Enter your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-500 underline">Google AI Studio</a>. 
+                  This key is stored locally on your device and never sent to our servers.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSettings(false)} 
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+              >
+                Save Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {notification && (
         <div className={`fixed top-14 right-4 left-4 sm:left-auto z-[100] p-4 rounded-2xl shadow-2xl border-l-4 bg-white animate-in slide-in-from-top-4 duration-500 sm:min-w-[300px] ${

@@ -2,12 +2,12 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { Subject } from "../types";
 import { SYSTEM_PROMPTS } from "../constants";
 
-export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = []) => {
+export const getTutorResponse = async (subject: Subject, message: string, history: { role: 'user' | 'model', content: string }[] = [], customApiKey?: string) => {
   try {
-    // Standard initialization per instructions
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    // Priority: 1. User-provided key, 2. Environment GEMINI_API_KEY, 3. Environment API_KEY
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
-      return "Specialist node configuration missing. Please ensure you have selected an API key in the 'Connect AI' menu or set GEMINI_API_KEY in your environment.";
+      return "Specialist node configuration missing. Please enter your API Key in the Settings menu or ensure GEMINI_API_KEY is set in your environment.";
     }
     const ai = new GoogleGenAI({ apiKey });
     
@@ -110,9 +110,9 @@ export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => 
   }
 };
 
-export const speakText = async (text: string) => {
+export const speakText = async (text: string, customApiKey?: string) => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) return false;
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
