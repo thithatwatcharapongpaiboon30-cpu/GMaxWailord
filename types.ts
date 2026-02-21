@@ -38,3 +38,12 @@ export interface TimerState {
   timeLeft: number;
   mode: 'study' | 'break';
 }
+
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}

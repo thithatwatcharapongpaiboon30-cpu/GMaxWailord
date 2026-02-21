@@ -41,7 +41,25 @@ const App: React.FC = () => {
   
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error', persistent?: boolean} | null>(null);
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if (window.aistudio) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(selected);
+      }
+    };
+    checkApiKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasApiKey(true); // Assume success per guidelines
+    }
+  };
   const [lastNotified, setLastNotified] = useState<{id: string, time: string} | null>(null);
 
   const [timer, setTimer] = useState<TimerState>({ isActive: false, timeLeft: 25 * 60, mode: 'study' });
@@ -215,6 +233,11 @@ const App: React.FC = () => {
           <NavButton icon={<MessageSquare size={14}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
         </nav>
         <div className="flex items-center gap-0.5">
+           {!hasApiKey && (
+             <button onClick={handleOpenKeySelector} className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[8px] font-black uppercase animate-pulse border border-amber-200 mr-1">
+               <Zap size={10} fill="currentColor" /> Connect AI
+             </button>
+           )}
            <button onClick={requestNotificationPermission} className={`p-1.5 rounded-md transition-all ${notificationPermission === 'granted' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400'}`}>
             {notificationPermission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
           </button>
