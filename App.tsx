@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Schedule, Subject, DayOfWeek, StudySession, ChatMessage, TimerState } from './types';
 import { SUBJECTS, DAYS, SUBJECT_INFO } from './constants';
-import { getTutorResponse, speakText, playNotificationSound } from './services/geminiService';
+import { getTutorResponse, speakText, playNotificationSound, resumeAudio } from './services/geminiService';
 import { 
   Plus, Calendar, MessageSquare, Trash2, 
   ChevronLeft, LayoutDashboard, Clock, 
@@ -41,7 +41,7 @@ const App: React.FC = () => {
   
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-  const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error'} | null>(null);
+  const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error', persistent?: boolean} | null>(null);
   const [lastNotified, setLastNotified] = useState<{id: string, time: string} | null>(null);
 
   const [timer, setTimer] = useState<TimerState>({ isActive: false, timeLeft: 25 * 60, mode: 'study' });
@@ -83,7 +83,7 @@ const App: React.FC = () => {
       }, 1000);
     } else if (timer.timeLeft === 0) {
       const msg = timer.mode === 'study' ? "Break Protocol Initiated" : "Study Protocol Resumed";
-      triggerNotification(msg, 'end', true);
+      triggerNotification(msg, 'end', true, true);
       setTimer({
         isActive: false,
         mode: timer.mode === 'study' ? 'break' : 'study',
@@ -105,10 +105,10 @@ const App: React.FC = () => {
             const startId = `${session.id}-start`;
             const endId = `${session.id}-end`;
             if (session.startTime === currentTimeStr && lastNotified?.id !== startId) {
-              triggerNotification(`START: ${session.subject} node!`, 'start', true);
+              triggerNotification(`START: ${session.subject} node!`, 'start', true, true);
               setLastNotified({ id: startId, time: currentTimeStr });
             } else if (session.endTime === currentTimeStr && lastNotified?.id !== endId) {
-              triggerNotification(`FINISH: ${session.subject} node!`, 'end', true);
+              triggerNotification(`FINISH: ${session.subject} node!`, 'end', true, true);
               setLastNotified({ id: endId, time: currentTimeStr });
             }
           }
@@ -118,11 +118,11 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [schedules, lastNotified]);
 
-  const triggerNotification = async (msg: string, type: 'start' | 'end' | 'success' | 'error', system: boolean = false) => {
-    setNotification({ message: msg, type });
+  const triggerNotification = async (msg: string, type: 'start' | 'end' | 'success' | 'error', system: boolean = false, persistent: boolean = false) => {
+    setNotification({ message: msg, type, persistent });
     
     if (system) {
-      playNotificationSound();
+      playNotificationSound(type === 'end' || type === 'start' ? 'alarm' : 'default');
       if (navigator.vibrate) {
         try { navigator.vibrate([200, 100, 200]); } catch (e) {}
       }
@@ -155,7 +155,10 @@ const App: React.FC = () => {
         }
       }
     }
-    setTimeout(() => setNotification(null), 5000);
+    
+    if (!persistent) {
+      setTimeout(() => setNotification(prev => prev?.message === msg ? null : prev), 5000);
+    }
   };
 
   const handleCreateSchedule = () => {
@@ -195,7 +198,10 @@ const App: React.FC = () => {
   const activeSchedule = useMemo(() => schedules.find(s => s.id === activeScheduleId), [schedules, activeScheduleId]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden font-inter select-none">
+    <div 
+      className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden font-inter select-none"
+      onClick={resumeAudio} // Silently resume audio context on first click
+    >
       <header className="h-12 bg-white/95 border-b px-4 flex items-center justify-between z-50 shrink-0 shadow-sm safe-top">
         <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setCurrentView(View.MENU)}>
           <div className="bg-blue-600 p-1 rounded-lg group-hover:scale-105 transition-transform">
@@ -219,11 +225,36 @@ const App: React.FC = () => {
       </header>
 
       {notification && (
-        <div className="fixed top-14 right-4 left-4 sm:left-auto z-[100] p-2.5 rounded-xl shadow-lg border-l-2 bg-slate-900 text-white animate-in slide-in-from-top-2 duration-300 sm:min-w-[220px]">
-          <div className="flex items-center gap-2">
-            <Bell size={12} className="text-blue-400" />
-            <p className="font-bold text-[9px] flex-1 truncate">{notification.message}</p>
-            <button onClick={() => setNotification(null)} className="opacity-40"><X size={12}/></button>
+        <div className={`fixed top-14 right-4 left-4 sm:left-auto z-[100] p-4 rounded-2xl shadow-2xl border-l-4 bg-white animate-in slide-in-from-top-4 duration-500 sm:min-w-[300px] ${
+          notification.type === 'start' ? 'border-blue-600' : 
+          notification.type === 'end' ? 'border-red-500' : 
+          notification.type === 'success' ? 'border-emerald-500' : 'border-slate-400'
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-xl ${
+              notification.type === 'start' ? 'bg-blue-50 text-blue-600' : 
+              notification.type === 'end' ? 'bg-red-50 text-red-600' : 
+              notification.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'
+            }`}>
+              <Bell size={20} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">System Alert</h4>
+              <p className="font-bold text-sm text-slate-800 leading-tight">{notification.message}</p>
+              {notification.persistent && (
+                <button 
+                  onClick={() => setNotification(null)} 
+                  className="mt-3 w-full bg-slate-900 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                >
+                  Acknowledge & Dismiss
+                </button>
+              )}
+            </div>
+            {!notification.persistent && (
+              <button onClick={() => setNotification(null)} className="text-slate-300 hover:text-slate-500 transition-colors">
+                <X size={16}/>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -309,7 +340,7 @@ const MenuView: React.FC<any> = ({schedules, activeId, onSelect, isCreating, set
         <div className="text-blue-500 shrink-0"><Info size={18} /></div>
         <div className="space-y-1">
           <h4 className="text-[10px] font-black text-blue-900 uppercase">Android Optimization</h4>
-          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu > Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions.</p>
+          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu &gt; Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions.</p>
         </div>
       </div>
     </div>
