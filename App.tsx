@@ -341,6 +341,42 @@ const App: React.FC = () => {
                   This key is stored locally on your device and never sent to our servers.
                 </p>
               </div>
+
+              <div className="pt-4 border-t space-y-3">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">System Diagnostics</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Platform</p>
+                    <p className="text-[9px] font-bold text-slate-700 truncate">{navigator.platform}</p>
+                  </div>
+                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Standalone</p>
+                    <p className="text-[9px] font-bold text-slate-700">{((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches ? 'YES' : 'NO'}</p>
+                  </div>
+                </div>
+                
+                {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <Info size={14} />
+                      <span className="text-[9px] font-black uppercase tracking-tight">iOS Notification Guide</span>
+                    </div>
+                    <ul className="text-[8px] text-amber-700 space-y-1 ml-4 list-disc">
+                      <li>Must be on <strong>iOS 16.4</strong> or newer.</li>
+                      <li>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>.</li>
+                      <li>Open the app from your <strong>Home Screen</strong>.</li>
+                      <li>Go to iOS <strong>Settings &gt; Notifications &gt; MedQuest AI</strong> and ensure "Allow Notifications" is ON.</li>
+                    </ul>
+                    <button 
+                      onClick={() => triggerNotification("Diagnostic: System Link Active", "success", true)}
+                      className="w-full bg-amber-200 text-amber-800 py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-300 transition-all"
+                    >
+                      Test iOS Link
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <button 
                   onClick={() => setShowSettings(false)} 
