@@ -161,12 +161,31 @@ const App: React.FC = () => {
   }, []);
 
   const requestNotificationPermission = async () => {
+    console.log("Requesting notification permission...");
     if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
-      if (permission === 'granted') {
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        triggerNotification("Notifications active!", "success", true);
+      try {
+        const permission = await Notification.requestPermission();
+        console.log("Permission result:", permission);
+        setNotificationPermission(permission);
+        
+        if (permission === 'granted') {
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          triggerNotification("Notifications active! System link verified.", "success", true);
+          
+          // Try a test notification immediately to confirm
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification('MedQuest AI', {
+              body: 'System Link Established',
+              icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png'
+            });
+          }
+        } else if (permission === 'denied') {
+          triggerNotification("Notifications denied. Please reset permissions in your browser/iOS settings.", 'error', false, true);
+        }
+      } catch (err) {
+        console.error("Error requesting permission:", err);
+        triggerNotification("Error requesting notification permission.", 'error', false, true);
       }
     } else {
       // iOS / Safari fallback
@@ -463,6 +482,7 @@ const App: React.FC = () => {
                         <li>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>.</li>
                         <li>Open the app from your <strong>Home Screen</strong>.</li>
                         <li>Go to iOS <strong>Settings &gt; Notifications &gt; MedQuest AI</strong> and ensure "Allow Notifications" is ON.</li>
+                        <li>Ensure <strong>Background App Refresh</strong> is enabled in iOS Settings for this app.</li>
                       </ul>
                       <div className="flex gap-2">
                         <button 

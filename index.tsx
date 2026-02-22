@@ -11,6 +11,12 @@ if ('serviceWorker' in navigator) {
       
       // Force update to ensure latest logic is active
       registration.update();
+
+      if ('Notification' in window) {
+        console.log('Notification API supported. Current permission:', Notification.permission);
+      } else {
+        console.log('Notification API NOT supported in this browser context.');
+      }
     } catch (error) {
       console.log('SW registration failed:', error);
     }

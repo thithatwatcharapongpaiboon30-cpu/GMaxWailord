@@ -1,16 +1,13 @@
-// MedQuest AI Service Worker v1.0.2
+// MedQuest AI Service Worker v1.0.4
 self.addEventListener('install', (event) => {
-  // Forces the waiting service worker to become the active service worker.
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      // Ensure the service worker is ready to show notifications
-      self.registration.update()
-    ])
+    clients.claim().then(() => {
+      return self.registration.update();
+    })
   );
 });
 
@@ -21,12 +18,18 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : { title: 'MedQuest AI', body: 'New Alert' };
+  const options = {
+    body: data.body,
+    icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+    badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+    vibrate: [200, 100, 200],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: '1'
+    }
+  };
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
-      badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png'
-    })
+    self.registration.showNotification(data.title, options)
   );
 });
 
@@ -34,27 +37,31 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
+      for (const client of clientList) {
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
         }
-        return client.focus();
       }
-      return clients.openWindow('/');
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
     })
   );
 });
 
-// Handle direct messages from the app to show notifications
-// This is often more reliable on iOS/Safari
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, options } = event.data;
+    // Ensure we have a valid options object
+    const notificationOptions = {
+      ...options,
+      data: {
+        dateOfArrival: Date.now(),
+        ...options.data
+      }
+    };
     event.waitUntil(
-      self.registration.showNotification(title, options)
+      self.registration.showNotification(title, notificationOptions)
     );
   }
 });
