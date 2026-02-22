@@ -136,7 +136,7 @@ const App: React.FC = () => {
       setHasApiKey(true); // Assume success per guidelines
     }
   };
-  const [lastNotified, setLastNotified] = useState<{id: string, time: string} | null>(null);
+  const [lastNotified, setLastNotified] = useState<Record<string, string>>({});
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
@@ -207,19 +207,21 @@ const App: React.FC = () => {
     const interval = setInterval(() => {
       const now = new Date();
       const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
-      const currentTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const currentTimeStr = `${h}:${m}`;
 
       schedules.forEach(schedule => {
         schedule.sessions.forEach(session => {
           if (session.day === currentDay) {
             const startId = `${session.id}-start`;
             const endId = `${session.id}-end`;
-            if (session.startTime === currentTimeStr && lastNotified?.id !== startId) {
+            if (session.startTime === currentTimeStr && lastNotified[startId] !== currentTimeStr) {
               triggerNotification(`START: ${session.subject} node!`, 'start', true, true);
-              setLastNotified({ id: startId, time: currentTimeStr });
-            } else if (session.endTime === currentTimeStr && lastNotified?.id !== endId) {
+              setLastNotified(prev => ({ ...prev, [startId]: currentTimeStr }));
+            } else if (session.endTime === currentTimeStr && lastNotified[endId] !== currentTimeStr) {
               triggerNotification(`FINISH: ${session.subject} node!`, 'end', true, true);
-              setLastNotified({ id: endId, time: currentTimeStr });
+              setLastNotified(prev => ({ ...prev, [endId]: currentTimeStr }));
             }
           }
         });
@@ -453,6 +455,21 @@ const App: React.FC = () => {
                     <div className="flex justify-between text-[8px]">
                       <span className="text-slate-500">Current Permission:</span>
                       <span className={notificationPermission === 'granted' ? 'text-emerald-400' : 'text-amber-400'}>{notificationPermission.toUpperCase()}</span>
+                    </div>
+                    <div className="flex justify-between text-[8px]">
+                      <span className="text-slate-500">Active Schedule:</span>
+                      <span className={activeScheduleId ? 'text-emerald-400' : 'text-slate-400'}>{activeScheduleId ? 'YES' : 'NONE'}</span>
+                    </div>
+                    <div className="flex justify-between text-[8px]">
+                      <span className="text-slate-500">Sessions Today:</span>
+                      <span className="text-blue-400">
+                        {(() => {
+                          const now = new Date();
+                          const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
+                          const todaySessions = schedules.flatMap(s => s.sessions).filter(sess => sess.day === currentDay);
+                          return todaySessions.length;
+                        })()}
+                      </span>
                     </div>
                   </div>
                 </div>
