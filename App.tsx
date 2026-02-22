@@ -358,7 +358,15 @@ const App: React.FC = () => {
         await document.exitPictureInPicture();
         setIsPiPActive(false);
       } else {
-        const stream = (pipCanvasRef.current as any).captureStream(10);
+        // Ensure canvas is drawn at least once before capturing
+        const canvas = pipCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        const stream = (pipCanvasRef.current as any).captureStream(30);
         pipVideoRef.current.srcObject = stream;
         await pipVideoRef.current.play();
         await pipVideoRef.current.requestPictureInPicture();
@@ -371,6 +379,19 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("PiP Error:", err);
       triggerNotification("Floating window failed. Ensure your browser supports Picture-in-Picture.", "error");
+    }
+  };
+
+  const handleMinimize = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    if (isIOS) {
+      // On iOS, the only way to "float" over other apps is PiP
+      // We trigger PiP automatically when they ask to minimize
+      togglePiP();
+    } else {
+      setIsMiniMode(true);
     }
   };
 
@@ -458,7 +479,7 @@ const App: React.FC = () => {
             <ExternalLink size={16} />
           </button>
            <button 
-             onClick={() => setIsMiniMode(true)} 
+             onClick={handleMinimize} 
              className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md transition-all"
              title="Minimize App"
            >
