@@ -368,6 +368,15 @@ const App: React.FC = () => {
            <button onClick={requestNotificationPermission} className={`p-1.5 rounded-md transition-all ${notificationPermission === 'granted' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400'}`}>
             {notificationPermission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
           </button>
+          {notificationPermission === 'granted' && (
+            <button 
+              onClick={() => triggerNotification("Test Notification Successful!", "success", true)}
+              className="p-1.5 text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-all ml-0.5"
+              title="Test Notification"
+            >
+              <TestTube size={16} />
+            </button>
+          )}
            <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className={`p-1.5 rounded-md transition-all ${isVoiceEnabled ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`}>
             <Volume2 size={16} />
           </button>
@@ -409,6 +418,32 @@ const App: React.FC = () => {
                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                     <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Standalone</p>
                     <p className="text-[9px] font-bold text-slate-700">{((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches ? 'YES' : 'NO'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-800">
+                      <Bell size={14} />
+                      <span className="text-[9px] font-black uppercase tracking-tight">Notification Test Center</span>
+                    </div>
+                    <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded ${notificationPermission === 'granted' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                      {notificationPermission === 'granted' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={requestNotificationPermission}
+                      className="flex-1 bg-white text-blue-600 border border-blue-200 py-2 rounded-lg font-black uppercase text-[8px] hover:bg-blue-50 transition-all shadow-sm"
+                    >
+                      Request Permission
+                    </button>
+                    <button 
+                      onClick={() => triggerNotification("Manual Test: Connection Verified", "success", true)}
+                      className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-black uppercase text-[8px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                    >
+                      Send Test Alert
+                    </button>
                   </div>
                 </div>
                 
