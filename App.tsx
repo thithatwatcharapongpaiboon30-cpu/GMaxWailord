@@ -356,42 +356,56 @@ const App: React.FC = () => {
     if (!video || !canvas) return;
 
     try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
+      // Check for existing PiP state (standard or webkit)
+      const isPipActive = !!document.pictureInPictureElement || (video as any).webkitPresentationMode === 'picture-in-picture';
+
+      if (isPipActive) {
+        if (document.exitPictureInPicture) {
+          await document.exitPictureInPicture();
+        } else if ((video as any).webkitSetPresentationMode) {
+          (video as any).webkitSetPresentationMode('inline');
+        }
         setIsPiPActive(false);
       } else {
-        // Ensure canvas is drawn at least once before capturing
+        // 1. Prepare Canvas
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        const stream = (canvas as any).captureStream(30);
-        video.srcObject = stream;
+        // 2. Setup Stream if not already set
+        if (!video.srcObject) {
+          const stream = (canvas as any).captureStream(30);
+          video.srcObject = stream;
+        }
         
-        // Wait for video to be ready
-        await new Promise((resolve) => {
-          video.onloadedmetadata = resolve;
-          video.load();
-        });
-
+        // 3. Play and Request PiP with minimal delay to preserve user gesture
         await video.play();
         
-        // Small delay to ensure engine is ready
-        await new Promise(r => setTimeout(r, 150));
+        if (video.requestPictureInPicture) {
+          await video.requestPictureInPicture();
+        } else if ((video as any).webkitSetPresentationMode) {
+          // Fallback for older iOS/Safari
+          (video as any).webkitSetPresentationMode('picture-in-picture');
+        } else {
+          throw new Error("PiP not supported in this browser");
+        }
         
-        await video.requestPictureInPicture();
         setIsPiPActive(true);
         
-        video.addEventListener('leavepictureinpicture', () => {
+        const handleLeave = () => {
           setIsPiPActive(false);
-          video.srcObject = null;
-        }, { once: true });
+          video.removeEventListener('leavepictureinpicture', handleLeave);
+          video.removeEventListener('webkitpresentationmodechanged', handleLeave);
+        };
+
+        video.addEventListener('leavepictureinpicture', handleLeave);
+        video.addEventListener('webkitpresentationmodechanged', handleLeave);
       }
     } catch (err) {
       console.error("PiP Error:", err);
-      triggerNotification("Floating window failed. Try tapping again or ensure your browser supports PiP.", "error");
+      triggerNotification("Floating window failed. Ensure you are using Safari on iPad and try again.", "error");
     }
   };
 
