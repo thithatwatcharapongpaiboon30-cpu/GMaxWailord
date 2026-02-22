@@ -10,8 +10,10 @@ import {
   ChevronLeft, LayoutDashboard, Clock, 
   Settings, Bell, Play, CheckCircle, 
   ChevronRight, BrainCircuit, Volume2, Pause, RotateCcw,
-  Zap, BookOpen, X, BellOff, Info, Share, TestTube
+  Zap, BookOpen, X, BellOff, Info, Share, TestTube,
+  Maximize2, Minimize2, ExternalLink
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const STORAGE_KEY = 'med_quest_v5_schedules';
 const ACTIVE_ID_KEY = 'med_quest_v5_active_id';
@@ -117,6 +119,10 @@ const App: React.FC = () => {
   
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [isMiniMode, setIsMiniMode] = useState(false);
+  const [isPiPActive, setIsPiPActive] = useState(false);
+  const pipVideoRef = useRef<HTMLVideoElement | null>(null);
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error', persistent?: boolean} | null>(null);
 
@@ -298,6 +304,76 @@ const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (isPiPActive) {
+      const updatePiPCanvas = () => {
+        const canvas = pipCanvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Draw background
+        ctx.fillStyle = '#0f172a'; // slate-900
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Timer
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        const minutes = Math.floor(timer.timeLeft / 60);
+        const seconds = timer.timeLeft % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        ctx.fillText(timeStr, canvas.width / 2, canvas.height / 2 + 10);
+
+        // Draw Mode/Subject
+        ctx.fillStyle = timer.mode === 'study' ? '#3b82f6' : '#10b981';
+        ctx.font = 'bold 24px Inter, sans-serif';
+        ctx.fillText(timer.mode === 'study' ? (activeSubject || 'STUDY') : 'BREAK', canvas.width / 2, canvas.height / 2 + 60);
+        
+        // Draw Progress Ring (simple)
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, canvas.height/2, 100, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const total = timer.mode === 'study' ? 25 * 60 : 5 * 60;
+        const progress = (timer.timeLeft / total);
+        ctx.strokeStyle = timer.mode === 'study' ? '#3b82f6' : '#10b981';
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, canvas.height/2, 100, -Math.PI/2, (-Math.PI/2) + (Math.PI * 2 * progress));
+        ctx.stroke();
+      };
+
+      const interval = setInterval(updatePiPCanvas, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isPiPActive, timer, activeSubject]);
+
+  const togglePiP = async () => {
+    if (!pipVideoRef.current || !pipCanvasRef.current) return;
+
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPiPActive(false);
+      } else {
+        const stream = (pipCanvasRef.current as any).captureStream(10);
+        pipVideoRef.current.srcObject = stream;
+        await pipVideoRef.current.play();
+        await pipVideoRef.current.requestPictureInPicture();
+        setIsPiPActive(true);
+        
+        pipVideoRef.current.addEventListener('leavepictureinpicture', () => {
+          setIsPiPActive(false);
+        }, { once: true });
+      }
+    } catch (err) {
+      console.error("PiP Error:", err);
+      triggerNotification("Floating window failed. Ensure your browser supports Picture-in-Picture.", "error");
+    }
+  };
+
   const handleCreateSchedule = () => {
     if (!newScheduleName.trim()) return;
     const newSchedule: Schedule = { id: `plan-${Date.now()}`, name: newScheduleName.trim(), sessions: [], createdAt: Date.now() };
@@ -374,6 +450,20 @@ const App: React.FC = () => {
           <NavButton icon={<MessageSquare size={14}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
         </nav>
         <div className="flex items-center gap-0.5">
+           <button 
+             onClick={togglePiP} 
+             className={`p-1.5 rounded-md transition-all ${isPiPActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+             title="Floating Window (Multitasking)"
+           >
+            <ExternalLink size={16} />
+          </button>
+           <button 
+             onClick={() => setIsMiniMode(true)} 
+             className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md transition-all"
+             title="Minimize App"
+           >
+            <Minimize2 size={16} />
+          </button>
            {!hasApiKey && !userApiKey && (
              <button onClick={handleOpenKeySelector} className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[8px] font-black uppercase animate-pulse border border-amber-200 mr-1">
                <Zap size={10} fill="currentColor" /> Connect AI
@@ -603,7 +693,35 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+      {/* Hidden elements for PiP */}
+      <canvas ref={pipCanvasRef} width="256" height="256" className="hidden" />
+      <video ref={pipVideoRef} className="hidden" muted playsInline />
+
+      <AnimatePresence>
+        {isMiniMode && (
+          <motion.div 
+            drag
+            dragMomentum={false}
+            initial={{ scale: 0.8, opacity: 0, x: 20, y: 20 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="fixed bottom-20 right-6 z-[200] w-16 h-16 bg-slate-900 rounded-2xl shadow-2xl flex flex-col items-center justify-center cursor-move border border-slate-700 group"
+          >
+            <div className="absolute -top-2 -right-2 bg-blue-600 text-white p-1 rounded-full shadow-lg cursor-pointer scale-0 group-hover:scale-100 transition-transform" onClick={() => setIsMiniMode(false)}>
+              <Maximize2 size={10} />
+            </div>
+            <div className="text-[10px] font-black text-white mb-0.5">
+              {Math.floor(timer.timeLeft / 60)}:{ (timer.timeLeft % 60).toString().padStart(2, '0') }
+            </div>
+            <div className={`w-1.5 h-1.5 rounded-full ${timer.mode === 'study' ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
+            <div className="text-[6px] text-slate-500 font-bold uppercase mt-1 truncate w-12 text-center">
+              {timer.mode === 'study' ? (activeSubject || 'Study') : 'Break'}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMiniMode ? 'blur-sm pointer-events-none opacity-50' : ''}`}>
         {currentView === View.MENU && (
           <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} onTest={() => triggerNotification("System Link Verified - Notification Active", "success", true)} />
         )}
