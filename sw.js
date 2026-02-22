@@ -14,6 +14,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('fetch', (event) => {
+  // Basic fetch handler to satisfy PWA requirements
+  event.respondWith(fetch(event.request).catch(() => fetch(event.request)));
+});
+
 self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : { title: 'MedQuest AI', body: 'New Alert' };
   event.waitUntil(

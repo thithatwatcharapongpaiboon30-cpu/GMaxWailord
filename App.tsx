@@ -21,7 +21,10 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.MENU);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const [newScheduleName, setNewScheduleName] = useState('');
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
+    if (typeof Notification !== 'undefined') return Notification.permission;
+    return 'default';
+  });
   const [userApiKey, setUserApiKey] = useState<string>(() => {
     return localStorage.getItem(API_KEY_STORAGE) || '';
   });
@@ -40,6 +43,18 @@ const App: React.FC = () => {
       }
     };
     return () => workerRef.current?.terminate();
+  }, []);
+
+  useEffect(() => {
+    // Sync permission state on mount and when window gains focus
+    const syncPermission = () => {
+      if (typeof Notification !== 'undefined') {
+        setNotificationPermission(Notification.permission);
+      }
+    };
+    window.addEventListener('focus', syncPermission);
+    syncPermission();
+    return () => window.removeEventListener('focus', syncPermission);
   }, []);
 
   const handleTimerExpired = () => {
@@ -307,6 +322,28 @@ const App: React.FC = () => {
       className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden font-inter select-none"
       onClick={resumeAudio} // Silently resume audio context on first click
     >
+      {(() => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isStandalone = ((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
+        
+        if (isIOS && !isStandalone) {
+          return (
+            <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-between gap-3 animate-in slide-in-from-top duration-500 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-1.5 rounded-lg">
+                  <Share size={14} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest">Install Required for Notifications</p>
+                  <p className="text-[8px] opacity-80 font-medium">Tap Share then "Add to Home Screen" to enable background alerts.</p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
       <header className="h-12 bg-white/95 border-b px-4 flex items-center justify-between z-50 shrink-0 shadow-sm safe-top">
         <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setCurrentView(View.MENU)}>
           <div className="bg-blue-600 p-1 rounded-lg group-hover:scale-105 transition-transform">
