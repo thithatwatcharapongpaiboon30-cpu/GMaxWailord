@@ -221,8 +221,26 @@ const App: React.FC = () => {
 
           if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
-            if (reg && reg.showNotification) {
-              await reg.showNotification('MedQuest AI', options);
+            if (reg) {
+              // Try direct showNotification first
+              if (reg.showNotification) {
+                try {
+                  await reg.showNotification('MedQuest AI', options);
+                } catch (swErr) {
+                  // Fallback: Post message to SW (more reliable on some iOS versions)
+                  reg.active?.postMessage({
+                    type: 'SHOW_NOTIFICATION',
+                    title: 'MedQuest AI',
+                    options
+                  });
+                }
+              } else {
+                reg.active?.postMessage({
+                  type: 'SHOW_NOTIFICATION',
+                  title: 'MedQuest AI',
+                  options
+                });
+              }
             } else {
               new Notification('MedQuest AI', options);
             }

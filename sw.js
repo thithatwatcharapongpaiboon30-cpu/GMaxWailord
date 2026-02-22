@@ -41,3 +41,14 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
+
+// Handle direct messages from the app to show notifications
+// This is often more reliable on iOS/Safari
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, options } = event.data;
+    event.waitUntil(
+      self.registration.showNotification(title, options)
+    );
+  }
+});

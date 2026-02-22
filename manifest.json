@@ -1,7 +1,8 @@
 {
   "name": "MedQuest AI Study Assistant",
   "short_name": "MedQuest AI",
-  "start_url": "/",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",

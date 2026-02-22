@@ -9,10 +9,8 @@ if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       console.log('SW registered:', registration);
       
-      // Check for existing notifications permission
-      if ('Notification' in window && Notification.permission === 'granted') {
-        console.log('Notification permission already granted');
-      }
+      // Force update to ensure latest logic is active
+      registration.update();
     } catch (error) {
       console.log('SW registration failed:', error);
     }
