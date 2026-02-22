@@ -124,7 +124,7 @@ const App: React.FC = () => {
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hasApiKey, setHasApiKey] = useState(true);
-  const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error', persistent?: boolean} | null>(null);
+  const [notification, setNotification] = useState<{message: string, type: 'start' | 'end' | 'success' | 'error' | 'info', persistent?: boolean} | null>(null);
 
   useEffect(() => {
     const checkApiKey = async () => {
@@ -236,7 +236,7 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [schedules, lastNotified]);
 
-  const triggerNotification = async (msg: string, type: 'start' | 'end' | 'success' | 'error', system: boolean = false, persistent: boolean = false) => {
+  const triggerNotification = async (msg: string, type: 'start' | 'end' | 'success' | 'error' | 'info', system: boolean = false, persistent: boolean = false) => {
     setNotification({ message: msg, type, persistent });
     
     if (system) {
@@ -356,7 +356,7 @@ const App: React.FC = () => {
     if (!video || !canvas) return;
 
     try {
-      // Check for existing PiP state (standard or webkit)
+      // Check for existing PiP state
       const isPipActive = !!document.pictureInPictureElement || (video as any).webkitPresentationMode === 'picture-in-picture';
 
       if (isPipActive) {
@@ -366,59 +366,50 @@ const App: React.FC = () => {
           (video as any).webkitSetPresentationMode('inline');
         }
         setIsPiPActive(false);
+        return true;
       } else {
-        // 1. Prepare Canvas
+        // 1. Ensure Canvas has content
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // 2. Setup Stream if not already set
+        // 2. Setup Stream
         if (!video.srcObject) {
           const stream = (canvas as any).captureStream(30);
           video.srcObject = stream;
         }
         
-        // 3. Play and Request PiP with minimal delay to preserve user gesture
-        await video.play();
+        // 3. CRITICAL: Play and Request MUST be as close as possible for Safari
+        video.play();
         
         if (video.requestPictureInPicture) {
           await video.requestPictureInPicture();
-        } else if ((video as any).webkitSetPresentationMode) {
-          // Fallback for older iOS/Safari
+          setIsPiPActive(true);
+          return true;
+        } else if ((video as any).webkitSetPresentationMode && (video as any).webkitSupportsPresentationMode('picture-in-picture')) {
           (video as any).webkitSetPresentationMode('picture-in-picture');
+          setIsPiPActive(true);
+          return true;
         } else {
-          throw new Error("PiP not supported in this browser");
+          console.warn("PiP not supported");
+          return false;
         }
-        
-        setIsPiPActive(true);
-        
-        const handleLeave = () => {
-          setIsPiPActive(false);
-          video.removeEventListener('leavepictureinpicture', handleLeave);
-          video.removeEventListener('webkitpresentationmodechanged', handleLeave);
-        };
-
-        video.addEventListener('leavepictureinpicture', handleLeave);
-        video.addEventListener('webkitpresentationmodechanged', handleLeave);
       }
     } catch (err) {
       console.error("PiP Error:", err);
-      triggerNotification("Floating window failed. Ensure you are using Safari on iPad and try again.", "error");
+      return false;
     }
   };
 
-  const handleMinimize = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const handleMinimize = async () => {
+    const success = await togglePiP();
     
-    if (isIOS) {
-      // On iOS, the only way to "float" over other apps is PiP
-      // We trigger PiP automatically when they ask to minimize
-      togglePiP();
-    } else {
+    // Fallback: If PiP fails or isn't supported, use the internal Mini Mode
+    if (!success) {
       setIsMiniMode(true);
+      triggerNotification("System window blocked. Using internal mini-mode instead.", "info");
     }
   };
 
@@ -710,13 +701,15 @@ const App: React.FC = () => {
         <div className={`fixed top-14 right-4 left-4 sm:left-auto z-[100] p-4 rounded-2xl shadow-2xl border-l-4 bg-white animate-in slide-in-from-top-4 duration-500 sm:min-w-[300px] ${
           notification.type === 'start' ? 'border-blue-600' : 
           notification.type === 'end' ? 'border-red-500' : 
-          notification.type === 'success' ? 'border-emerald-500' : 'border-slate-400'
+          notification.type === 'success' ? 'border-emerald-500' : 
+          notification.type === 'info' ? 'border-blue-400' : 'border-slate-400'
         }`}>
           <div className="flex items-start gap-3">
             <div className={`p-2 rounded-xl ${
               notification.type === 'start' ? 'bg-blue-50 text-blue-600' : 
               notification.type === 'end' ? 'bg-red-50 text-red-600' : 
-              notification.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'
+              notification.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 
+              notification.type === 'info' ? 'bg-blue-50 text-blue-500' : 'bg-slate-50 text-slate-600'
             }`}>
               <Bell size={20} />
             </div>
