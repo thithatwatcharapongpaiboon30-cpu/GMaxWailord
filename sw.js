@@ -1,3 +1,4 @@
+// MedQuest AI Service Worker v1.0.2
 self.addEventListener('install', (event) => {
   // Forces the waiting service worker to become the active service worker.
   self.skipWaiting();

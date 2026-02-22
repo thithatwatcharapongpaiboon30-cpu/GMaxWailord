@@ -155,7 +155,8 @@ const App: React.FC = () => {
       }
     } else {
       // iOS / Safari fallback
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const isStandalone = ((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
       
       if (isIOS && !isStandalone) {
@@ -203,8 +204,9 @@ const App: React.FC = () => {
       }
 
       // iOS / Safari check
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isStandalone = (window.navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isStandalone = ((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
 
       if (notificationPermission === 'granted') {
         try {
@@ -373,26 +375,52 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 
-                {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
-                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-2">
-                    <div className="flex items-center gap-2 text-amber-800">
-                      <Info size={14} />
-                      <span className="text-[9px] font-black uppercase tracking-tight">iOS Notification Guide</span>
+                {(() => {
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                  if (!isIOS) return null;
+                  
+                  return (
+                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-2">
+                      <div className="flex items-center gap-2 text-amber-800">
+                        <Info size={14} />
+                        <span className="text-[9px] font-black uppercase tracking-tight">iOS Notification Guide</span>
+                      </div>
+                      <ul className="text-[8px] text-amber-700 space-y-1 ml-4 list-disc">
+                        <li>Must be on <strong>iOS 16.4</strong> or newer.</li>
+                        <li>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>.</li>
+                        <li>Open the app from your <strong>Home Screen</strong>.</li>
+                        <li>Go to iOS <strong>Settings &gt; Notifications &gt; MedQuest AI</strong> and ensure "Allow Notifications" is ON.</li>
+                      </ul>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={requestNotificationPermission}
+                          className="flex-1 bg-amber-200 text-amber-800 py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-300 transition-all"
+                        >
+                          1. Request Permission
+                        </button>
+                        <button 
+                          onClick={() => triggerNotification("Diagnostic: System Link Active", "success", true)}
+                          className="flex-1 bg-amber-600 text-white py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-700 transition-all shadow-sm"
+                        >
+                          2. Test iOS Link
+                        </button>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          if ('serviceWorker' in navigator) {
+                            const regs = await navigator.serviceWorker.getRegistrations();
+                            for (let reg of regs) await reg.unregister();
+                            window.location.reload();
+                          }
+                        }}
+                        className="w-full border border-amber-200 text-amber-600 py-1 rounded-lg font-black uppercase text-[7px] hover:bg-amber-100 transition-all"
+                      >
+                        Troubleshoot: Reset System Worker
+                      </button>
                     </div>
-                    <ul className="text-[8px] text-amber-700 space-y-1 ml-4 list-disc">
-                      <li>Must be on <strong>iOS 16.4</strong> or newer.</li>
-                      <li>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>.</li>
-                      <li>Open the app from your <strong>Home Screen</strong>.</li>
-                      <li>Go to iOS <strong>Settings &gt; Notifications &gt; MedQuest AI</strong> and ensure "Allow Notifications" is ON.</li>
-                    </ul>
-                    <button 
-                      onClick={() => triggerNotification("Diagnostic: System Link Active", "success", true)}
-                      className="w-full bg-amber-200 text-amber-800 py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-300 transition-all"
-                    >
-                      Test iOS Link
-                    </button>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="flex gap-2">
