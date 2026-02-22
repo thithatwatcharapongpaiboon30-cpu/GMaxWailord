@@ -353,10 +353,9 @@ const App: React.FC = () => {
   const togglePiP = async () => {
     const video = pipVideoRef.current;
     const canvas = pipCanvasRef.current;
-    if (!video || !canvas) return;
+    if (!video || !canvas) return false;
 
     try {
-      // Check for existing PiP state
       const isPipActive = !!document.pictureInPictureElement || (video as any).webkitPresentationMode === 'picture-in-picture';
 
       if (isPipActive) {
@@ -368,34 +367,32 @@ const App: React.FC = () => {
         setIsPiPActive(false);
         return true;
       } else {
-        // 1. Ensure Canvas has content
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // 2. Setup Stream
         if (!video.srcObject) {
-          const stream = (canvas as any).captureStream(30);
-          video.srcObject = stream;
+          video.srcObject = (canvas as any).captureStream(30);
         }
         
-        // 3. CRITICAL: Play and Request MUST be as close as possible for Safari
-        video.play();
+        // Safari requires play() to be called immediately in the gesture
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
         
         if (video.requestPictureInPicture) {
           await video.requestPictureInPicture();
-          setIsPiPActive(true);
-          return true;
-        } else if ((video as any).webkitSetPresentationMode && (video as any).webkitSupportsPresentationMode('picture-in-picture')) {
+        } else if ((video as any).webkitSetPresentationMode) {
           (video as any).webkitSetPresentationMode('picture-in-picture');
-          setIsPiPActive(true);
-          return true;
         } else {
-          console.warn("PiP not supported");
           return false;
         }
+        
+        setIsPiPActive(true);
+        return true;
       }
     } catch (err) {
       console.error("PiP Error:", err);
@@ -734,9 +731,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Hidden elements for PiP - using opacity-0 instead of display:none for better browser support */}
-      <canvas ref={pipCanvasRef} width="256" height="256" className="fixed pointer-events-none opacity-0" />
-      <video ref={pipVideoRef} className="fixed pointer-events-none opacity-0" muted playsInline />
+      {/* Hidden elements for PiP - using opacity-[0.001] and 1px size to trick Safari into allowing PiP */}
+      <canvas ref={pipCanvasRef} width="256" height="256" className="fixed top-0 left-0 w-px h-px pointer-events-none opacity-[0.001]" />
+      <video ref={pipVideoRef} className="fixed top-0 left-0 w-px h-px pointer-events-none opacity-[0.001]" muted playsInline />
 
       <AnimatePresence>
         {isMiniMode && (
