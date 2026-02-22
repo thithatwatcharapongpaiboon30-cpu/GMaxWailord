@@ -26,6 +26,8 @@
             background-color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
+            /* Fix for iOS momentum scrolling */
+            -webkit-overflow-scrolling: touch;
         }
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;

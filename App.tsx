@@ -153,6 +153,18 @@ const App: React.FC = () => {
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         triggerNotification("Notifications active!", "success", true);
       }
+    } else {
+      // iOS / Safari fallback
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = ((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
+      
+      if (isIOS && !isStandalone) {
+        triggerNotification("iOS Alert: Tap 'Share' then 'Add to Home Screen' to enable background notifications.", 'error', false, true);
+      } else if (isIOS && isStandalone) {
+        triggerNotification("Please enable notifications in your iOS Settings for this app.", 'error', false, true);
+      } else {
+        triggerNotification("Notifications are not supported on this browser.", 'error', false, true);
+      }
     }
   };
 
@@ -190,32 +202,42 @@ const App: React.FC = () => {
         try { navigator.vibrate([200, 100, 200]); } catch (e) {}
       }
 
+      // iOS / Safari check
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = (window.navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches;
+
       if (notificationPermission === 'granted') {
         try {
+          const options: any = {
+            body: msg,
+            icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+            badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
+            vibrate: [200, 100, 200],
+            tag: 'medquest-alert-' + (persistent ? 'p' : 't'),
+            renotify: true,
+            requireInteraction: persistent,
+            silent: false
+          };
+
           if ('serviceWorker' in navigator) {
-            const reg = await navigator.serviceWorker.getRegistration();
-            if (reg) {
-              // unique tag forces Android to show a new heads-up notification
-              const notificationTag = 'medquest-' + Date.now();
-              reg.showNotification('MedQuest AI', {
-                body: msg,
-                icon: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
-                badge: 'https://cdn-icons-png.flaticon.com/512/3070/3070044.png',
-                vibrate: [200, 100, 200],
-                tag: notificationTag,
-                renotify: true,
-                requireInteraction: true,
-                silent: false
-              } as any);
+            const reg = await navigator.serviceWorker.ready;
+            if (reg && reg.showNotification) {
+              await reg.showNotification('MedQuest AI', options);
             } else {
-              new Notification('MedQuest AI', { body: msg, tag: 'medquest-alert' });
+              new Notification('MedQuest AI', options);
             }
-          } else {
-            new Notification('MedQuest AI', { body: msg, tag: 'medquest-alert' });
+          } else if ('Notification' in window) {
+            new Notification('MedQuest AI', options);
           }
         } catch (e) {
           console.error("System notification error:", e);
         }
+      } else if (isIOS && !isStandalone) {
+        setNotification({ 
+          message: "iOS Alert: Tap 'Share' then 'Add to Home Screen' to enable background notifications.", 
+          type: 'error', 
+          persistent: true 
+        });
       }
     }
     
