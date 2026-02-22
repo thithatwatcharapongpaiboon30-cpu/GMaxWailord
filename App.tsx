@@ -256,28 +256,24 @@ const App: React.FC = () => {
           };
 
           if ('serviceWorker' in navigator) {
-            const reg = await navigator.serviceWorker.ready;
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            const reg = registrations[0];
+            
             if (reg) {
-              // Try direct showNotification first
-              if (reg.showNotification) {
-                try {
-                  await reg.showNotification('MedQuest AI', options);
-                } catch (swErr) {
-                  // Fallback: Post message to SW (more reliable on some iOS versions)
-                  reg.active?.postMessage({
-                    type: 'SHOW_NOTIFICATION',
-                    title: 'MedQuest AI',
-                    options
-                  });
-                }
-              } else {
-                reg.active?.postMessage({
+              // On iOS, postMessage is often more reliable than direct showNotification
+              // especially when the app is in the background or standalone mode
+              if (reg.active) {
+                reg.active.postMessage({
                   type: 'SHOW_NOTIFICATION',
                   title: 'MedQuest AI',
                   options
                 });
+              } else {
+                // Fallback to direct if active is not yet set
+                await reg.showNotification('MedQuest AI', options);
               }
             } else {
+              // No registration found, try to create one or use standard Notification
               new Notification('MedQuest AI', options);
             }
           } else if ('Notification' in window) {
@@ -437,6 +433,27 @@ const App: React.FC = () => {
                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                     <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Standalone</p>
                     <p className="text-[9px] font-bold text-slate-700">{((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches ? 'YES' : 'NO'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 p-3 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <TestTube size={12} />
+                    <span className="text-[8px] font-black uppercase tracking-widest">System Health Report</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[8px]">
+                      <span className="text-slate-500">Service Worker:</span>
+                      <span className={'serviceWorker' in navigator ? 'text-emerald-400' : 'text-red-400'}>{'serviceWorker' in navigator ? 'SUPPORTED' : 'MISSING'}</span>
+                    </div>
+                    <div className="flex justify-between text-[8px]">
+                      <span className="text-slate-500">Notification API:</span>
+                      <span className={'Notification' in window ? 'text-emerald-400' : 'text-red-400'}>{'Notification' in window ? 'SUPPORTED' : 'MISSING'}</span>
+                    </div>
+                    <div className="flex justify-between text-[8px]">
+                      <span className="text-slate-500">Current Permission:</span>
+                      <span className={notificationPermission === 'granted' ? 'text-emerald-400' : 'text-amber-400'}>{notificationPermission.toUpperCase()}</span>
+                    </div>
                   </div>
                 </div>
 
