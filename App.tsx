@@ -26,7 +26,60 @@ const App: React.FC = () => {
     return localStorage.getItem(API_KEY_STORAGE) || '';
   });
   const [showSettings, setShowSettings] = useState(false);
-  
+  const [timer, setTimer] = useState<TimerState>({ isActive: false, timeLeft: 25 * 60, mode: 'study' });
+  const workerRef = useRef<Worker | null>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  useEffect(() => {
+    workerRef.current = new Worker(new URL('./timerWorker.js', import.meta.url));
+    workerRef.current.onmessage = (e) => {
+      if (e.data.type === 'TICK') {
+        setTimer(t => ({ ...t, timeLeft: e.data.timeLeft }));
+      } else if (e.data.type === 'EXPIRED') {
+        handleTimerExpired();
+      }
+    };
+    return () => workerRef.current?.terminate();
+  }, []);
+
+  const handleTimerExpired = () => {
+    setTimer(prev => {
+      const nextMode = prev.mode === 'study' ? 'break' : 'study';
+      const nextTime = nextMode === 'study' ? 25 * 60 : 5 * 60;
+      const msg = prev.mode === 'study' ? "Break Protocol Initiated" : "Study Protocol Resumed";
+      triggerNotification(msg, 'end', true, true);
+      releaseWakeLock();
+      return { isActive: false, mode: nextMode, timeLeft: nextTime };
+    });
+  };
+
+  const requestWakeLock = async () => {
+    if ('wakeLock' in navigator) {
+      try {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+      } catch (err: any) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (timer.isActive) {
+      workerRef.current?.postMessage({ type: 'START', timeLeft: timer.timeLeft });
+      requestWakeLock();
+    } else {
+      workerRef.current?.postMessage({ type: 'STOP' });
+      releaseWakeLock();
+    }
+  }, [timer.isActive]);
+
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -70,8 +123,6 @@ const App: React.FC = () => {
   };
   const [lastNotified, setLastNotified] = useState<{id: string, time: string} | null>(null);
 
-  const [timer, setTimer] = useState<TimerState>({ isActive: false, timeLeft: 25 * 60, mode: 'study' });
-
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
   }, [schedules]);
@@ -106,24 +157,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    let interval: any;
-    if (timer.isActive && timer.timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimer(t => ({ ...t, timeLeft: t.timeLeft - 1 }));
-      }, 1000);
-    } else if (timer.timeLeft === 0) {
-      const msg = timer.mode === 'study' ? "Break Protocol Initiated" : "Study Protocol Resumed";
-      triggerNotification(msg, 'end', true, true);
-      setTimer({
-        isActive: false,
-        mode: timer.mode === 'study' ? 'break' : 'study',
-        timeLeft: timer.mode === 'study' ? 5 * 60 : 25 * 60
-      });
-    }
-    return () => clearInterval(interval);
-  }, [timer.isActive, timer.timeLeft]);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
       const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
@@ -144,7 +177,7 @@ const App: React.FC = () => {
           }
         });
       });
-    }, 5000);
+    }, 10000); // Check every 10 seconds
     return () => clearInterval(interval);
   }, [schedules, lastNotified]);
 
@@ -432,7 +465,7 @@ const MenuView: React.FC<{
         <div className="text-blue-500 shrink-0"><Info size={18} /></div>
         <div className="space-y-1">
           <h4 className="text-[10px] font-black text-blue-900 uppercase">Android Optimization</h4>
-          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu &gt; Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions.</p>
+          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu &gt; Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions and allows notifications to work in the background.</p>
         </div>
       </div>
     </div>
