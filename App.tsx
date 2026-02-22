@@ -351,7 +351,9 @@ const App: React.FC = () => {
   }, [isPiPActive, timer, activeSubject]);
 
   const togglePiP = async () => {
-    if (!pipVideoRef.current || !pipCanvasRef.current) return;
+    const video = pipVideoRef.current;
+    const canvas = pipCanvasRef.current;
+    if (!video || !canvas) return;
 
     try {
       if (document.pictureInPictureElement) {
@@ -359,26 +361,37 @@ const App: React.FC = () => {
         setIsPiPActive(false);
       } else {
         // Ensure canvas is drawn at least once before capturing
-        const canvas = pipCanvasRef.current;
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        const stream = (pipCanvasRef.current as any).captureStream(30);
-        pipVideoRef.current.srcObject = stream;
-        await pipVideoRef.current.play();
-        await pipVideoRef.current.requestPictureInPicture();
+        const stream = (canvas as any).captureStream(30);
+        video.srcObject = stream;
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+          video.onloadedmetadata = resolve;
+          video.load();
+        });
+
+        await video.play();
+        
+        // Small delay to ensure engine is ready
+        await new Promise(r => setTimeout(r, 150));
+        
+        await video.requestPictureInPicture();
         setIsPiPActive(true);
         
-        pipVideoRef.current.addEventListener('leavepictureinpicture', () => {
+        video.addEventListener('leavepictureinpicture', () => {
           setIsPiPActive(false);
+          video.srcObject = null;
         }, { once: true });
       }
     } catch (err) {
       console.error("PiP Error:", err);
-      triggerNotification("Floating window failed. Ensure your browser supports Picture-in-Picture.", "error");
+      triggerNotification("Floating window failed. Try tapping again or ensure your browser supports PiP.", "error");
     }
   };
 
@@ -714,9 +727,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Hidden elements for PiP */}
-      <canvas ref={pipCanvasRef} width="256" height="256" className="hidden" />
-      <video ref={pipVideoRef} className="hidden" muted playsInline />
+      {/* Hidden elements for PiP - using opacity-0 instead of display:none for better browser support */}
+      <canvas ref={pipCanvasRef} width="256" height="256" className="fixed pointer-events-none opacity-0" />
+      <video ref={pipVideoRef} className="fixed pointer-events-none opacity-0" muted playsInline />
 
       <AnimatePresence>
         {isMiniMode && (
