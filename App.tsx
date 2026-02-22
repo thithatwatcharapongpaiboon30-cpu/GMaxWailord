@@ -621,7 +621,16 @@ const App: React.FC = () => {
                       onClick={() => triggerNotification("Manual Test: Connection Verified", "success", true)}
                       className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-black uppercase text-[8px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
                     >
-                      Send Test Alert
+                      Test Alert
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        await resumeAudio();
+                        playNotificationSound('alarm');
+                      }}
+                      className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-black uppercase text-[8px] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      Test Sound
                     </button>
                   </div>
                 </div>

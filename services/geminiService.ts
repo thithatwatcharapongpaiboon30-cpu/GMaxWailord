@@ -74,51 +74,66 @@ const getAudioContext = () => {
   return audioContext;
 };
 
-export const resumeAudio = () => {
+export const resumeAudio = async () => {
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      await ctx.resume();
     }
-  } catch (e) {}
+    // iOS "Unlock": Play a short silent buffer to enable audio
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch (e) {
+    console.error("Audio resume error:", e);
+  }
 };
 
-export const playNotificationSound = (type: 'default' | 'alarm' = 'default') => {
+export const playNotificationSound = async (type: 'default' | 'alarm' = 'default') => {
   try {
     const ctx = getAudioContext();
+    
+    // Ensure context is running
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    const now = ctx.currentTime;
     
     if (type === 'alarm') {
       // More urgent sound for session end
       osc.type = 'square';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.5);
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 1.0);
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.5);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 1.0);
       
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
-      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.9);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.9);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
       
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 1.2);
+      osc.start(now);
+      osc.stop(now + 1.2);
     } else {
       // Standard notification beep
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(660, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(660, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
       
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
       
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
     }
   } catch (e) {
     console.error("Audio play error:", e);
