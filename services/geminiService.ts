@@ -27,8 +27,8 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
 
     const ai = new GoogleGenAI({ apiKey });
     
-    // Use stable model aliases
-    const modelName = 'gemini-flash-latest'; 
+    // Upgrade to Gemini 3 Flash for better stability and performance
+    const modelName = 'gemini-3-flash-preview'; 
 
     // Ensure history roles are correct and alternating
     const conversationHistory = history
@@ -41,23 +41,53 @@ export const getTutorResponse = async (subject: Subject, message: string, histor
     // Add the current message
     conversationHistory.push({ role: 'user', parts: [{ text: message }] });
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: conversationHistory,
-      config: {
-        systemInstruction: SYSTEM_PROMPTS[subject],
-        temperature: 0.7,
-      }
-    });
+    // Implement retry logic for 503/504 errors
+    let attempts = 0;
+    const maxAttempts = 3;
+    let lastError = null;
 
-    if (!response || !response.text) {
-      throw new Error("Empty response from AI node.");
+    while (attempts < maxAttempts) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: conversationHistory,
+          config: {
+            systemInstruction: SYSTEM_PROMPTS[subject],
+            temperature: 0.7,
+          }
+        });
+
+        if (!response || !response.text) {
+          throw new Error("Empty response from AI node.");
+        }
+
+        return response.text;
+      } catch (error: any) {
+        lastError = error;
+        const isRetryable = error?.message?.includes('503') || 
+                           error?.message?.includes('504') || 
+                           error?.message?.includes('high demand') ||
+                           error?.message?.includes('overloaded');
+        
+        if (isRetryable && attempts < maxAttempts - 1) {
+          attempts++;
+          // Exponential backoff: 1s, 2s
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          continue;
+        }
+        break;
+      }
     }
 
-    return response.text;
+    throw lastError;
   } catch (error: any) {
     console.error("Gemini AI Session Error:", error);
     const errorMsg = error?.message || "Unknown Error";
+    
+    if (errorMsg.includes('503') || errorMsg.includes('high demand')) {
+      return "Google's AI servers are currently experiencing a temporary spike in demand. I've tried to reconnect 3 times, but they are still busy. Please wait 30 seconds and try your question again.";
+    }
+    
     return `The specialist node encountered an error: ${errorMsg}. Please check your API key and network connection.`;
   }
 };
