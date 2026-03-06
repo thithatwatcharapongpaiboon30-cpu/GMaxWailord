@@ -3,6 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, Legend
+} from 'recharts';
 import { View, Schedule, Subject, DayOfWeek, StudySession, ChatMessage, TimerState } from './types';
 import { SUBJECTS, DAYS, SUBJECT_INFO } from './constants';
 import { getTutorResponse, speakText, playNotificationSound, resumeAudio } from './services/geminiService';
@@ -19,6 +23,78 @@ import { motion, AnimatePresence } from 'motion/react';
 const STORAGE_KEY = 'med_quest_v5_schedules';
 const ACTIVE_ID_KEY = 'med_quest_v5_active_id';
 const API_KEY_STORAGE = 'med_quest_v5_api_key';
+
+const ChartRenderer: React.FC<{ content: string }> = ({ content }) => {
+  try {
+    const chartData = JSON.parse(content);
+    const { type, data, title, xKey = 'name', yKey = 'value' } = chartData;
+    
+    const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+    return (
+      <div className="my-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        {title && <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800 mb-4 text-center">{title}</h4>}
+        <div className="h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            {type === 'bar' ? (
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey={xKey} fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
+                />
+                <Bar dataKey={yKey} fill="#2563eb" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            ) : type === 'line' ? (
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey={xKey} fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
+                />
+                <Line type="monotone" dataKey={yKey} stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            ) : type === 'area' ? (
+              <AreaChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey={xKey} fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis fontSize={8} tick={{ fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
+                />
+                <Area type="monotone" dataKey={yKey} stroke="#2563eb" fill="#dbeafe" strokeWidth={2} />
+              </AreaChart>
+            ) : type === 'pie' ? (
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={60}
+                  paddingAngle={5}
+                  dataKey={yKey}
+                >
+                  {data.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px' }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '8px', paddingTop: '10px' }} />
+              </PieChart>
+            ) : null}
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  } catch (e) {
+    return <pre className="text-[8px] bg-red-50 p-2 rounded text-red-500">Chart Error: Invalid Data Format</pre>;
+  }
+};
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.MENU);
@@ -1068,7 +1144,23 @@ const TutorView: React.FC<{
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
               <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
                 <div className="leading-relaxed text-[11px] font-medium markdown-body">
-                  <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkMath, remarkGfm]} 
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        if (!inline && match && match[1] === 'chart') {
+                          return <ChartRenderer content={String(children).replace(/\n$/, '')} />;
+                        }
+                        return (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
                     {msg.content}
                   </ReactMarkdown>
                 </div>
