@@ -30,7 +30,15 @@ export enum View {
   MENU = 'menu',
   EDITOR = 'editor',
   DASHBOARD = 'dashboard',
-  AI_TUTOR = 'ai_tutor'
+  AI_TUTOR = 'ai_tutor',
+  VAULT = 'vault'
+}
+
+export interface SavedNote {
+  id: string;
+  subject: Subject;
+  content: string;
+  timestamp: number;
 }
 
 export interface TimerState {

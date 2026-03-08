@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { View, Schedule, Subject, DayOfWeek, StudySession, ChatMessage, TimerState } from './types';
+import { View, Schedule, Subject, DayOfWeek, StudySession, ChatMessage, TimerState, SavedNote } from './types';
 import { SUBJECTS, DAYS, SUBJECT_INFO } from './constants';
 import { getTutorResponse, speakText, playNotificationSound, resumeAudio } from './services/geminiService';
 import { 
@@ -16,13 +16,14 @@ import {
   Settings, Bell, Play, CheckCircle, 
   ChevronRight, BrainCircuit, Volume2, Pause, RotateCcw,
   Zap, BookOpen, X, BellOff, Info, Share, TestTube,
-  Maximize2, Minimize2, ExternalLink
+  Maximize2, Minimize2, ExternalLink, Bookmark, Download, Copy, Save
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const STORAGE_KEY = 'med_quest_v5_schedules';
 const ACTIVE_ID_KEY = 'med_quest_v5_active_id';
 const API_KEY_STORAGE = 'med_quest_v5_api_key';
+const NOTES_STORAGE_KEY = 'med_quest_v5_saved_notes';
 
 const ChartRenderer: React.FC<{ content: string }> = ({ content }) => {
   try {
@@ -135,6 +136,34 @@ const App: React.FC = () => {
     syncPermission();
     return () => window.removeEventListener('focus', syncPermission);
   }, []);
+
+  const [savedNotes, setSavedNotes] = useState<SavedNote[]>(() => {
+    try {
+      const saved = localStorage.getItem(NOTES_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(savedNotes));
+  }, [savedNotes]);
+
+  const handleSaveNote = (subject: Subject, content: string) => {
+    const newNote: SavedNote = {
+      id: Math.random().toString(36).substr(2, 9),
+      subject,
+      content,
+      timestamp: Date.now()
+    };
+    setSavedNotes(prev => [newNote, ...prev]);
+    triggerNotification("Note Saved to Vault", "success", false);
+  };
+
+  const handleDeleteNote = (id: string) => {
+    setSavedNotes(prev => prev.filter(n => n.id !== id));
+  };
 
   const handleTimerExpired = () => {
     setTimer(prev => {
@@ -561,6 +590,7 @@ const App: React.FC = () => {
           <NavButton icon={<LayoutDashboard size={14}/>} active={currentView === View.DASHBOARD} onClick={() => activeSchedule ? setCurrentView(View.DASHBOARD) : setCurrentView(View.MENU)} />
           <NavButton icon={<Calendar size={14}/>} active={currentView === View.EDITOR} onClick={() => activeSchedule ? setCurrentView(View.EDITOR) : setCurrentView(View.MENU)} />
           <NavButton icon={<MessageSquare size={14}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
+          <NavButton icon={<Bookmark size={14}/>} active={currentView === View.VAULT} onClick={() => setCurrentView(View.VAULT)} />
         </nav>
         <div className="flex items-center gap-0.5">
            <button 
@@ -856,7 +886,10 @@ const App: React.FC = () => {
           <EditorView schedule={activeSchedule} onAdd={addSessionToActive} onRemove={removeSessionFromActive} />
         )}
         {currentView === View.AI_TUTOR && (
-          <TutorView activeSubject={activeSubject} setActiveSubject={setActiveSubject} history={chatHistory} onSend={handleSendMessage} isTyping={isTyping} timer={timer} setTimer={setTimer} />
+          <TutorView activeSubject={activeSubject} setActiveSubject={setActiveSubject} history={chatHistory} onSend={handleSendMessage} isTyping={isTyping} timer={timer} setTimer={setTimer} onSave={handleSaveNote} />
+        )}
+        {currentView === View.VAULT && (
+          <VaultView notes={savedNotes} onDelete={handleDeleteNote} />
         )}
       </main>
       <div className="safe-bottom bg-slate-50"></div>
@@ -1086,8 +1119,9 @@ const TutorView: React.FC<{
   onSend: (s: Subject, t: string) => void, 
   isTyping: boolean, 
   timer: TimerState, 
-  setTimer: React.Dispatch<React.SetStateAction<TimerState>>
-}> = ({activeSubject, setActiveSubject, history, onSend, isTyping, timer, setTimer}) => {
+  setTimer: React.Dispatch<React.SetStateAction<TimerState>>,
+  onSave: (s: Subject, c: string) => void
+}> = ({activeSubject, setActiveSubject, history, onSend, isTyping, timer, setTimer, onSave}) => {
   const [input, setInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [history, isTyping, activeSubject]);
@@ -1113,6 +1147,11 @@ const TutorView: React.FC<{
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    // Could add a toast here
   };
 
   return (
@@ -1142,7 +1181,7 @@ const TutorView: React.FC<{
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 custom-scrollbar bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:12px_12px]">
           {history[activeSubject].map((msg:any) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
-              <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
+              <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
                 <div className="leading-relaxed text-[11px] font-medium markdown-body">
                   <ReactMarkdown 
                     remarkPlugins={[remarkMath, remarkGfm]} 
@@ -1164,7 +1203,19 @@ const TutorView: React.FC<{
                     {msg.content}
                   </ReactMarkdown>
                 </div>
-                <div className={`flex items-center gap-1 mt-1 opacity-20 text-[5px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={5} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-black/5">
+                  <div className={`flex items-center gap-1 opacity-20 text-[5px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={5} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  {msg.role === 'model' && (
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleCopy(msg.content)} className="p-1 hover:bg-black/5 rounded text-slate-400" title="Copy Markdown">
+                        <Copy size={10} />
+                      </button>
+                      <button onClick={() => onSave(activeSubject, msg.content)} className="p-1 hover:bg-black/5 rounded text-blue-500" title="Save to Vault">
+                        <Bookmark size={10} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -1193,6 +1244,125 @@ const TutorView: React.FC<{
             </button>
           </form>
           <p className="text-[5px] font-black text-slate-200 uppercase tracking-widest mt-1 text-center">Protocol Synchronized</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VaultView: React.FC<{ notes: SavedNote[], onDelete: (id: string) => void }> = ({ notes, onDelete }) => {
+  const [selectedNote, setSelectedNote] = useState<SavedNote | null>(null);
+
+  const handleDownload = (note: SavedNote) => {
+    const blob = new Blob([note.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MedQuest_Note_${note.subject}_${new Date(note.timestamp).toISOString().split('T')[0]}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500 h-full flex flex-col">
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <h2 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Knowledge Vault</h2>
+          <p className="text-slate-400 text-[9px] uppercase tracking-widest">Stored Intelligence</p>
+        </div>
+        <div className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+          <span className="text-[10px] font-black text-blue-600 uppercase">{notes.length} Fragments</span>
+        </div>
+      </div>
+
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
+        <div className="md:col-span-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+          {notes.map(note => (
+            <button 
+              key={note.id} 
+              onClick={() => setSelectedNote(note)}
+              className={`w-full text-left p-3 rounded-xl border transition-all group relative ${selectedNote?.id === note.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white border-slate-100 hover:border-blue-300 shadow-sm'}`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs">{SUBJECT_INFO[note.subject as Subject].icon}</span>
+                <span className={`text-[8px] font-black uppercase tracking-widest ${selectedNote?.id === note.id ? 'text-blue-100' : 'text-slate-400'}`}>{note.subject}</span>
+              </div>
+              <p className={`text-[10px] font-bold line-clamp-2 leading-tight ${selectedNote?.id === note.id ? 'text-white' : 'text-slate-700'}`}>
+                {note.content.substring(0, 100)}...
+              </p>
+              <div className={`text-[6px] font-black uppercase mt-2 ${selectedNote?.id === note.id ? 'text-blue-200' : 'text-slate-300'}`}>
+                {new Date(note.timestamp).toLocaleDateString()}
+              </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(note.id); if (selectedNote?.id === note.id) setSelectedNote(null); }}
+                className={`absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${selectedNote?.id === note.id ? 'hover:bg-white/20 text-white' : 'hover:bg-red-50 text-slate-300 hover:text-red-500'}`}
+              >
+                <Trash2 size={12} />
+              </button>
+            </button>
+          ))}
+          {notes.length === 0 && (
+            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <Bookmark size={32} className="mx-auto text-slate-200 mb-2" />
+              <p className="text-[10px] font-black text-slate-300 uppercase">Vault Empty</p>
+            </div>
+          )}
+        </div>
+
+        <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          {selectedNote ? (
+            <>
+              <div className="p-4 border-bottom border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm text-white ${SUBJECT_INFO[selectedNote.subject as Subject].color}`}>
+                    {SUBJECT_INFO[selectedNote.subject as Subject].icon}
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{selectedNote.subject} Analysis</h3>
+                    <p className="text-[7px] font-black text-slate-400 uppercase">{new Date(selectedNote.timestamp).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDownload(selectedNote)} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Download .md">
+                    <Download size={14} />
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(selectedNote.content); }} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Copy">
+                    <Copy size={14} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <div className="markdown-body text-xs leading-relaxed text-slate-700">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkMath, remarkGfm]} 
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        if (!inline && match && match[1] === 'chart') {
+                          return <ChartRenderer content={String(children).replace(/\n$/, '')} />;
+                        }
+                        return (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {selectedNote.content}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
+                <BrainCircuit size={32} />
+              </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select a fragment to decode</h3>
+            </div>
+          )}
         </div>
       </div>
     </div>
