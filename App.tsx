@@ -16,7 +16,8 @@ import {
   Settings, Bell, Play, CheckCircle, 
   ChevronRight, BrainCircuit, Volume2, Pause, RotateCcw,
   Zap, BookOpen, X, BellOff, Info, Share, TestTube,
-  Maximize2, Minimize2, ExternalLink, Bookmark, Download, Copy, Save
+  Maximize2, Minimize2, ExternalLink, Bookmark, Download, Copy, Save,
+  RefreshCw, Database, Shield, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -554,7 +555,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col h-screen bg-slate-50 text-slate-900 overflow-hidden font-inter select-none"
+      className="flex flex-col h-screen bg-[#0a0a0c] text-slate-200 overflow-hidden font-inter select-none"
       onClick={resumeAudio} // Silently resume audio context on first click
     >
       {(() => {
@@ -579,272 +580,203 @@ const App: React.FC = () => {
         }
         return null;
       })()}
-      <header className="h-12 bg-white/95 border-b px-4 flex items-center justify-between z-50 shrink-0 shadow-sm safe-top">
-        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setCurrentView(View.MENU)}>
-          <div className="bg-blue-600 p-1 rounded-lg group-hover:scale-105 transition-transform">
-            <BrainCircuit className="text-white" size={16} />
+      <header className="glass sticky top-0 z-50 px-4 py-3 flex items-center justify-between border-b border-white/5 shadow-2xl safe-top">
+        <div className="flex items-center gap-6 cursor-pointer group" onClick={() => setCurrentView(View.MENU)}>
+          <motion.div 
+            whileHover={{ rotate: 180 }}
+            className="bg-blue-600 p-2 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+          >
+            <BrainCircuit className="text-white" size={20} />
+          </motion.div>
+          <div className="hidden sm:block text-left">
+            <h1 className="text-sm font-display font-black tracking-tighter uppercase text-white leading-none">MedQuest <span className="text-blue-500">OS</span></h1>
+            <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-blue-400/60 mt-1">Neural Interface v5.2</p>
           </div>
-          <h1 className="text-xs font-black tracking-tight hidden sm:block uppercase">MedQuest AI</h1>
         </div>
-        <nav className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
-          <NavButton icon={<LayoutDashboard size={14}/>} active={currentView === View.DASHBOARD} onClick={() => activeSchedule ? setCurrentView(View.DASHBOARD) : setCurrentView(View.MENU)} />
-          <NavButton icon={<Calendar size={14}/>} active={currentView === View.EDITOR} onClick={() => activeSchedule ? setCurrentView(View.EDITOR) : setCurrentView(View.MENU)} />
-          <NavButton icon={<MessageSquare size={14}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
-          <NavButton icon={<Bookmark size={14}/>} active={currentView === View.VAULT} onClick={() => setCurrentView(View.VAULT)} />
-        </nav>
-        <div className="flex items-center gap-0.5">
-           <button 
-             onClick={togglePiP} 
-             className={`p-1.5 rounded-md transition-all ${isPiPActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
-             title="Floating Window (Multitasking)"
-           >
-            <ExternalLink size={16} />
-          </button>
-           <button 
-             onClick={handleMinimize} 
-             className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md transition-all"
-             title="Minimize App"
-           >
-            <Minimize2 size={16} />
-          </button>
-           {!hasApiKey && !userApiKey && (
-             <button onClick={handleOpenKeySelector} className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[8px] font-black uppercase animate-pulse border border-amber-200 mr-1">
-               <Zap size={10} fill="currentColor" /> Connect AI
-             </button>
-           )}
-           <button onClick={() => setShowSettings(!showSettings)} className={`p-1.5 rounded-md transition-all ${showSettings ? 'bg-slate-200 text-slate-800' : 'text-slate-400'}`}>
-            <Settings size={16} />
-          </button>
-           <button onClick={requestNotificationPermission} className={`p-1.5 rounded-md transition-all ${notificationPermission === 'granted' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400'}`}>
-            {notificationPermission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
-          </button>
-          {notificationPermission === 'granted' && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 glass-dark p-1.5 rounded-2xl border border-white/5">
+            <NavButton icon={<LayoutDashboard size={16}/>} active={currentView === View.DASHBOARD} onClick={() => activeSchedule ? setCurrentView(View.DASHBOARD) : setCurrentView(View.MENU)} />
+            <NavButton icon={<Calendar size={16}/>} active={currentView === View.EDITOR} onClick={() => activeSchedule ? setCurrentView(View.EDITOR) : setCurrentView(View.MENU)} />
+            <NavButton icon={<MessageSquare size={16}/>} active={currentView === View.AI_TUTOR} onClick={() => setCurrentView(View.AI_TUTOR)} />
+            <NavButton icon={<Bookmark size={16}/>} active={currentView === View.VAULT} onClick={() => setCurrentView(View.VAULT)} />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <button 
-              onClick={() => triggerNotification("Test Notification Successful!", "success", true)}
-              className="p-1.5 text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-all ml-0.5"
-              title="Test Notification"
+              onClick={togglePiP} 
+              className={`p-2 rounded-xl transition-all ${isPiPActive ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+              title="Floating Window"
             >
-              <TestTube size={16} />
+              <ExternalLink size={16} />
             </button>
-          )}
-           <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className={`p-1.5 rounded-md transition-all ${isVoiceEnabled ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`}>
-            <Volume2 size={16} />
-          </button>
+            <button 
+              onClick={handleMinimize} 
+              className="p-2 text-slate-500 hover:bg-white/5 hover:text-slate-200 rounded-xl transition-all"
+              title="Minimize"
+            >
+              <Minimize2 size={16} />
+            </button>
+            <button 
+              onClick={() => setShowSettings(!showSettings)} 
+              className={`p-2 rounded-xl transition-all ${showSettings ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-slate-500 hover:bg-white/5'}`}
+            >
+              <Settings size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
       {showSettings && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b flex justify-between items-center bg-slate-50">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800">System Configuration</h3>
-              <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600"><X size={18}/></button>
+        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-white/10"
+          >
+            <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
+              <h3 className="text-[10px] font-display font-black uppercase tracking-[0.3em] text-white">System Configuration</h3>
+              <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Gemini API Key</label>
+            <div className="p-8 space-y-8 custom-scrollbar max-h-[80vh] overflow-y-auto">
+              <div className="space-y-3">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-blue-400 block">Gemini API Key</label>
                 <div className="relative">
                   <input 
                     type="password" 
                     placeholder="AIza..." 
                     value={userApiKey} 
                     onChange={(e) => setUserApiKey(e.target.value)}
-                    className="w-full bg-slate-50 p-3 rounded-xl border-2 border-slate-100 focus:border-blue-500 outline-none font-mono text-xs transition-all"
+                    className="w-full bg-white/5 p-4 rounded-2xl border border-white/10 focus:border-blue-500 outline-none font-mono text-xs transition-all text-white placeholder:text-slate-700"
                   />
                 </div>
-                <p className="text-[8px] text-slate-400 leading-relaxed">
-                  Enter your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-500 underline">Google AI Studio</a>. 
-                  This key is stored locally on your device and never sent to our servers.
+                <p className="text-[9px] text-slate-500 leading-relaxed font-medium">
+                  Enter your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-400 underline hover:text-blue-300 transition-colors">Google AI Studio</a>. 
+                  Stored locally. Never transmitted to external servers.
                 </p>
               </div>
 
-              <div className="pt-4 border-t space-y-3">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">System Diagnostics</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Platform</p>
-                    <p className="text-[9px] font-bold text-slate-700 truncate">{navigator.platform}</p>
+              <div className="pt-6 border-t border-white/5 space-y-4">
+                <h4 className="text-[10px] font-display font-black uppercase tracking-[0.2em] text-white">System Diagnostics</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                    <p className="text-[8px] font-mono font-bold text-slate-500 uppercase mb-1">Architecture</p>
+                    <p className="text-[10px] font-bold text-slate-300 truncate">{navigator.platform}</p>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Standalone</p>
-                    <p className="text-[9px] font-bold text-slate-700">{((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches ? 'YES' : 'NO'}</p>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                    <p className="text-[8px] font-mono font-bold text-slate-500 uppercase mb-1">Standalone</p>
+                    <p className="text-[10px] font-bold text-slate-300">{((window as any).navigator as any).standalone || (window as any).matchMedia('(display-mode: standalone)').matches ? 'ACTIVE' : 'OFFLINE'}</p>
                   </div>
                 </div>
 
-                <div className="bg-slate-900 p-3 rounded-xl space-y-2">
+                <div className="bg-black/40 p-4 rounded-2xl border border-white/5 space-y-3">
                   <div className="flex items-center gap-2 text-blue-400">
-                    <TestTube size={12} />
-                    <span className="text-[8px] font-black uppercase tracking-widest">System Health Report</span>
+                    <TestTube size={14} />
+                    <span className="text-[9px] font-display font-black uppercase tracking-[0.2em]">Health Report</span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[8px]">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[9px] font-mono">
                       <span className="text-slate-500">Service Worker:</span>
-                      <span className={'serviceWorker' in navigator ? 'text-emerald-400' : 'text-red-400'}>{'serviceWorker' in navigator ? 'SUPPORTED' : 'MISSING'}</span>
+                      <span className={'serviceWorker' in navigator ? 'text-emerald-400' : 'text-red-400'}>{'serviceWorker' in navigator ? 'SYNCED' : 'MISSING'}</span>
                     </div>
-                    <div className="flex justify-between text-[8px]">
+                    <div className="flex justify-between text-[9px] font-mono">
                       <span className="text-slate-500">Notification API:</span>
-                      <span className={'Notification' in window ? 'text-emerald-400' : 'text-red-400'}>{'Notification' in window ? 'SUPPORTED' : 'MISSING'}</span>
+                      <span className={'Notification' in window ? 'text-emerald-400' : 'text-red-400'}>{'Notification' in window ? 'READY' : 'MISSING'}</span>
                     </div>
-                    <div className="flex justify-between text-[8px]">
-                      <span className="text-slate-500">Current Permission:</span>
+                    <div className="flex justify-between text-[9px] font-mono">
+                      <span className="text-slate-500">Permission:</span>
                       <span className={notificationPermission === 'granted' ? 'text-emerald-400' : 'text-amber-400'}>{notificationPermission.toUpperCase()}</span>
                     </div>
-                    <div className="flex justify-between text-[8px]">
-                      <span className="text-slate-500">Active Schedule:</span>
-                      <span className={activeScheduleId ? 'text-emerald-400' : 'text-slate-400'}>{activeScheduleId ? 'YES' : 'NONE'}</span>
-                    </div>
-                    <div className="flex justify-between text-[8px]">
-                      <span className="text-slate-500">Sessions Today:</span>
-                      <span className="text-blue-400">
-                        {(() => {
-                          const now = new Date();
-                          const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
-                          const todaySessions = schedules.flatMap(s => s.sessions).filter(sess => sess.day === currentDay);
-                          return todaySessions.length;
-                        })()}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 space-y-2">
+                <div className="bg-blue-600/10 p-4 rounded-2xl border border-blue-500/20 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-blue-800">
-                      <Bell size={14} />
-                      <span className="text-[9px] font-black uppercase tracking-tight">Notification Test Center</span>
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <Bell size={16} />
+                      <span className="text-[10px] font-display font-black uppercase tracking-widest">Neural Alerts</span>
                     </div>
-                    <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded ${notificationPermission === 'granted' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                      {notificationPermission === 'granted' ? 'Active' : 'Inactive'}
+                    <span className={`text-[8px] font-mono font-black uppercase px-2 py-0.5 rounded ${notificationPermission === 'granted' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {notificationPermission === 'granted' ? 'Active' : 'Standby'}
                     </span>
                   </div>
                   <div className="flex gap-2">
                     <button 
                       onClick={requestNotificationPermission}
-                      className="flex-1 bg-white text-blue-600 border border-blue-200 py-2 rounded-lg font-black uppercase text-[8px] hover:bg-blue-50 transition-all shadow-sm"
+                      className="flex-1 bg-white/5 text-blue-400 border border-white/10 py-2.5 rounded-xl font-black uppercase text-[9px] hover:bg-white/10 transition-all"
                     >
-                      Request Permission
+                      Auth
                     </button>
                     <button 
                       onClick={() => triggerNotification("Manual Test: Connection Verified", "success", true)}
-                      className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-black uppercase text-[8px] hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                      className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-black uppercase text-[9px] hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
                     >
-                      Test Alert
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        await resumeAudio();
-                        playNotificationSound('alarm');
-                      }}
-                      className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-black uppercase text-[8px] hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      Test Sound
+                      Test
                     </button>
                   </div>
                 </div>
                 
-                {(() => {
-                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                  if (!isIOS) return null;
-                  
-                  return (
-                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 space-y-2">
-                      <div className="flex items-center gap-2 text-amber-800">
-                        <Info size={14} />
-                        <span className="text-[9px] font-black uppercase tracking-tight">iOS Notification Guide</span>
-                      </div>
-                      <ul className="text-[8px] text-amber-700 space-y-1 ml-4 list-disc">
-                        <li>Must be on <strong>iOS 16.4</strong> or newer.</li>
-                        <li>Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>.</li>
-                        <li>Open the app from your <strong>Home Screen</strong>.</li>
-                        <li>Go to iOS <strong>Settings &gt; Notifications &gt; MedQuest AI</strong> and ensure "Allow Notifications" is ON.</li>
-                        <li>Ensure <strong>Background App Refresh</strong> is enabled in iOS Settings for this app.</li>
-                      </ul>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={requestNotificationPermission}
-                          className="flex-1 bg-amber-200 text-amber-800 py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-300 transition-all"
-                        >
-                          1. Request Permission
-                        </button>
-                        <button 
-                          onClick={() => triggerNotification("Diagnostic: System Link Active", "success", true)}
-                          className="flex-1 bg-amber-600 text-white py-1.5 rounded-lg font-black uppercase text-[8px] hover:bg-amber-700 transition-all shadow-sm"
-                        >
-                          2. Test iOS Link
-                        </button>
-                      </div>
-                      <button 
-                        onClick={async () => {
-                          if ('serviceWorker' in navigator) {
-                            const regs = await navigator.serviceWorker.getRegistrations();
-                            for (let reg of regs) await reg.unregister();
-                            window.location.reload();
-                          }
-                        }}
-                        className="w-full border border-amber-200 text-amber-600 py-1 rounded-lg font-black uppercase text-[7px] hover:bg-amber-100 transition-all"
-                      >
-                        Troubleshoot: Reset System Worker
-                      </button>
-                    </div>
-                  );
-                })()}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-4">
                 <button 
                   onClick={() => setShowSettings(false)} 
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+                  className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-500/20 hover:bg-blue-500 transition-all"
                 >
-                  Save Configuration
+                  Commit Changes
                 </button>
                 <button 
                   onClick={() => { setUserApiKey(''); localStorage.removeItem(API_KEY_STORAGE); }} 
-                  className="px-4 bg-slate-100 text-slate-400 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-50 hover:text-red-500 transition-all"
+                  className="px-6 bg-white/5 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-red-500/10 hover:text-red-400 transition-all"
                 >
-                  Clear
+                  Reset
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
       {notification && (
-        <div className={`fixed top-14 right-4 left-4 sm:left-auto z-[100] p-4 rounded-2xl shadow-2xl border-l-4 bg-white animate-in slide-in-from-top-4 duration-500 sm:min-w-[300px] ${
-          notification.type === 'start' ? 'border-blue-600' : 
-          notification.type === 'end' ? 'border-red-500' : 
-          notification.type === 'success' ? 'border-emerald-500' : 
-          notification.type === 'info' ? 'border-blue-400' : 'border-slate-400'
-        }`}>
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-xl ${
-              notification.type === 'start' ? 'bg-blue-50 text-blue-600' : 
-              notification.type === 'end' ? 'bg-red-50 text-red-600' : 
-              notification.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 
-              notification.type === 'info' ? 'bg-blue-50 text-blue-500' : 'bg-slate-50 text-slate-600'
+        <motion.div 
+          initial={{ opacity: 0, y: -20, x: 20 }}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className={`fixed top-20 right-4 left-4 sm:left-auto z-[100] p-5 rounded-3xl shadow-2xl border border-white/10 glass animate-in slide-in-from-top-4 duration-500 sm:min-w-[320px] ${
+            notification.type === 'start' ? 'shadow-blue-500/10' : 
+            notification.type === 'end' ? 'shadow-red-500/10' : 
+            notification.type === 'success' ? 'shadow-emerald-500/10' : 
+            notification.type === 'info' ? 'shadow-blue-400/10' : 'shadow-slate-400/10'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-2xl ${
+              notification.type === 'start' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40' : 
+              notification.type === 'end' ? 'bg-red-600 text-white shadow-lg shadow-red-500/40' : 
+              notification.type === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/40' : 
+              notification.type === 'info' ? 'bg-blue-400 text-white shadow-lg shadow-blue-400/40' : 'bg-slate-700 text-white shadow-lg shadow-slate-700/40'
             }`}>
               <Bell size={20} />
             </div>
             <div className="flex-1">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">System Alert</h4>
-              <p className="font-bold text-sm text-slate-800 leading-tight">{notification.message}</p>
+              <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.3em] text-slate-500 mb-1.5">System Alert</h4>
+              <p className="font-display font-bold text-sm text-white leading-tight">{notification.message}</p>
               {notification.persistent && (
                 <button 
                   onClick={() => setNotification(null)} 
-                  className="mt-3 w-full bg-slate-900 text-white py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                  className="mt-4 w-full bg-blue-600 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
                 >
-                  Acknowledge & Dismiss
+                  Acknowledge
                 </button>
               )}
             </div>
             {!notification.persistent && (
-              <button onClick={() => setNotification(null)} className="text-slate-300 hover:text-slate-500 transition-colors">
-                <X size={16}/>
+              <button onClick={() => setNotification(null)} className="text-slate-600 hover:text-white transition-colors">
+                <X size={18}/>
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Hidden elements for PiP - using opacity-[0.001] and 1px size to trick Safari into allowing PiP */}
@@ -877,7 +809,18 @@ const App: React.FC = () => {
 
       <main className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMiniMode ? 'blur-sm pointer-events-none opacity-50' : ''}`}>
         {currentView === View.MENU && (
-          <MenuView schedules={schedules} activeId={activeScheduleId} onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} isCreating={isCreatingSchedule} setIsCreating={setIsCreatingSchedule} newName={newScheduleName} setNewName={setNewScheduleName} onCreate={handleCreateSchedule} onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} onTest={() => triggerNotification("System Link Verified - Notification Active", "success", true)} />
+          <MenuView 
+            schedules={schedules} 
+            activeId={activeScheduleId} 
+            onSelect={(id) => { setActiveScheduleId(id); setCurrentView(View.DASHBOARD); }} 
+            isCreating={isCreatingSchedule} 
+            setIsCreating={setIsCreatingSchedule} 
+            newName={newScheduleName} 
+            setNewName={setNewScheduleName} 
+            onCreate={handleCreateSchedule} 
+            onDelete={(id) => { if (confirm("Delete this plan?")) { setSchedules(prev => prev.filter(s => s.id !== id)); if (activeScheduleId === id) setActiveScheduleId(null); } }} 
+            onTest={() => triggerNotification("System Link Verified - Notification Active", "success", true)} 
+          />
         )}
         {currentView === View.DASHBOARD && activeSchedule && (
           <DashboardView schedule={activeSchedule} onGoToEditor={() => setCurrentView(View.EDITOR)} onStartTutor={(s) => { setActiveSubject(s); setCurrentView(View.AI_TUTOR); }} />
@@ -898,9 +841,24 @@ const App: React.FC = () => {
 };
 
 const NavButton: React.FC<{icon: React.ReactNode, active: boolean, onClick: () => void}> = ({icon, active, onClick}) => (
-  <button onClick={onClick} className={`p-1.5 rounded-md transition-all ${active ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+  <motion.button 
+    whileHover={{ scale: 1.1, y: -2 }}
+    whileTap={{ scale: 0.9 }}
+    onClick={onClick} 
+    className={`p-2.5 rounded-xl transition-all duration-300 relative group ${
+      active 
+        ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' 
+        : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+    }`}
+  >
     {icon}
-  </button>
+    {active && (
+      <motion.div 
+        layoutId="nav-glow"
+        className="absolute inset-0 rounded-xl bg-blue-400/20 blur-xl -z-10"
+      />
+    )}
+  </motion.button>
 );
 
 const MenuView: React.FC<{
@@ -915,64 +873,102 @@ const MenuView: React.FC<{
   onDelete: (id: string) => void, 
   onTest: () => void
 }> = ({schedules, activeId, onSelect, isCreating, setIsCreating, newName, setNewName, onCreate, onDelete, onTest}) => (
-  <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500">
-    <div className="flex justify-between items-end mb-6">
+  <div className="max-w-5xl mx-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex justify-between items-end mb-10">
       <div>
-        <h2 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Command Center</h2>
-        <p className="text-slate-400 text-[9px] uppercase tracking-widest">Protocol Sync</p>
+        <h2 className="text-3xl font-display font-black text-white tracking-tight uppercase">Command Center</h2>
+        <p className="text-blue-500/80 text-[10px] font-mono font-bold uppercase tracking-[0.4em] mt-2">System Protocols // Local Storage</p>
       </div>
-      <div className="flex gap-2">
-        <button onClick={onTest} title="Test Android Notification" className="bg-slate-200 text-slate-600 p-1.5 rounded-lg hover:bg-slate-300 transition-all flex items-center gap-1">
-          <TestTube size={14} /> <span className="text-[8px] font-black uppercase">Test</span>
+      <div className="flex gap-4">
+        <button onClick={onTest} title="Test Android Notification" className="bg-slate-900/60 backdrop-blur-xl border border-white/10 text-slate-400 px-5 py-3 rounded-2xl hover:text-blue-400 hover:border-blue-500/30 transition-all flex items-center gap-3 shadow-xl">
+          <TestTube size={18} /> <span className="text-[10px] font-mono font-bold uppercase tracking-widest hidden sm:inline">Diagnostic</span>
         </button>
         {!isCreating && (
-          <button onClick={() => setIsCreating(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-1 shadow-lg shadow-blue-500/10 uppercase">
-            <Plus size={12} /> New Plan
+          <button onClick={() => setIsCreating(true)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[11px] flex items-center gap-3 shadow-xl shadow-blue-500/20 uppercase tracking-widest hover:bg-blue-500 transition-all">
+            <Plus size={16} /> New Protocol
           </button>
         )}
       </div>
     </div>
     {isCreating && (
-      <div className="mb-6 bg-white p-4 rounded-xl border-2 border-blue-500 shadow-xl">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Initialization</h3>
-          <button onClick={() => setIsCreating(false)} className="text-slate-300"><X size={14}/></button>
+      <motion.div 
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="mb-10 bg-slate-900/60 backdrop-blur-xl p-8 rounded-[2.5rem] border border-blue-500/30 shadow-2xl shadow-blue-500/10"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-[0.4em]">Protocol Initialization</h3>
+          <button onClick={() => setIsCreating(false)} className="text-slate-500 hover:text-white transition-colors bg-white/5 p-2 rounded-xl"><X size={16}/></button>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); onCreate(); }} className="flex gap-2">
-          <input autoFocus type="text" placeholder="Protocol name..." value={newName} onChange={(e) => setNewName(e.target.value)} className="flex-1 bg-slate-50 p-2 rounded-lg border-none font-bold text-xs outline-none focus:ring-1 focus:ring-blue-500" />
-          <button type="submit" disabled={!newName.trim()} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs disabled:opacity-50">Launch</button>
+        <form onSubmit={(e) => { e.preventDefault(); onCreate(); }} className="flex gap-4">
+          <input 
+            autoFocus 
+            type="text" 
+            placeholder="Enter protocol designation..." 
+            value={newName} 
+            onChange={(e) => setNewName(e.target.value)} 
+            className="flex-1 bg-white/5 p-4 rounded-2xl border border-white/10 font-display font-bold text-sm outline-none focus:border-blue-500 transition-all placeholder:text-slate-600 text-white shadow-inner" 
+          />
+          <button 
+            type="submit" 
+            disabled={!newName.trim()} 
+            className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest disabled:opacity-30 hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20"
+          >
+            Execute
+          </button>
         </form>
-      </div>
+      </motion.div>
     )}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {schedules.map((s: any) => (
-        <div key={s.id} onClick={() => onSelect(s.id)} className={`p-4 rounded-xl cursor-pointer border-2 transition-all ${activeId === s.id ? 'bg-white border-blue-500 shadow-md' : 'bg-white border-slate-100 hover:border-blue-200'}`}>
-          <div className="flex justify-between items-start mb-3">
-            <div className={`p-2 rounded-lg ${activeId === s.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400'}`}><Calendar size={16} /></div>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} className="p-1.5 text-slate-200 hover:text-red-500"><Trash2 size={14} /></button>
+        <motion.div 
+          key={s.id} 
+          whileHover={{ y: -5, scale: 1.02 }}
+          onClick={() => onSelect(s.id)} 
+          className={`p-8 rounded-[2.5rem] cursor-pointer border transition-all duration-500 relative overflow-hidden group ${
+            activeId === s.id 
+              ? 'bg-slate-900/80 backdrop-blur-xl border-blue-500/50 shadow-2xl shadow-blue-500/20' 
+              : 'bg-slate-900/40 backdrop-blur-xl border-white/5 hover:border-white/20 shadow-xl'
+          }`}
+        >
+          <div className="flex justify-between items-start mb-8 relative z-10">
+            <div className={`p-4 rounded-2xl transition-colors duration-500 ${activeId === s.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40' : 'bg-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10'}`}>
+              <Calendar size={24} />
+            </div>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} className="p-3 bg-white/5 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+              <Trash2 size={16} />
+            </button>
           </div>
-          <h3 className="text-sm font-black text-slate-800">{s.name}</h3>
-          <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-widest">{s.sessions.length} nodes active</p>
-        </div>
+          <h3 className="text-xl font-display font-black text-white mb-2 relative z-10 tracking-tight">{s.name}</h3>
+          <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-[0.2em] relative z-10">{s.sessions.length} active nodes</p>
+          
+          {activeId === s.id && (
+            <div className="absolute -right-8 -bottom-8 bg-blue-500/20 w-40 h-40 rounded-full blur-3xl pointer-events-none" />
+          )}
+        </motion.div>
       ))}
       {schedules.length === 0 && !isCreating && (
-        <div className="col-span-full py-12 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
-          <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-            <Calendar size={32} />
+        <div className="col-span-full py-24 text-center bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border-dashed border-2 border-white/5 shadow-2xl">
+          <div className="bg-white/5 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 text-slate-600 shadow-inner">
+            <Calendar size={48} />
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">No plans initialized</p>
-          <p className="text-slate-300 text-[8px] uppercase tracking-tighter">Click "New Plan" to begin command setup</p>
+          <p className="text-slate-300 text-lg font-display font-black uppercase tracking-widest mb-3">No protocols detected</p>
+          <p className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-[0.3em]">Initialize a new plan to begin system setup</p>
         </div>
       )}
     </div>
-    <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-      <div className="flex gap-3">
-        <div className="text-blue-500 shrink-0"><Info size={18} /></div>
-        <div className="space-y-1">
-          <h4 className="text-[10px] font-black text-blue-900 uppercase">Android Optimization</h4>
-          <p className="text-[9px] text-blue-700 leading-relaxed">For consistent study alerts, please <strong>Install App</strong> (via Chrome Menu &gt; Add to Home Screen). This prevents Android from putting the assistant to sleep during your sessions and allows notifications to work in the background.</p>
+    <div className="mt-16 p-8 bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-blue-500/20 relative overflow-hidden shadow-2xl">
+      <div className="flex gap-6 relative z-10">
+        <div className="text-blue-400 shrink-0 bg-blue-500/10 p-4 rounded-2xl"><Info size={24} /></div>
+        <div className="space-y-3">
+          <h4 className="text-[11px] font-display font-black text-blue-400 uppercase tracking-widest">System Optimization</h4>
+          <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+            For peak performance and persistent background monitoring, please <strong className="text-blue-300">Install as PWA</strong>. 
+            This prevents the OS from suspending the assistant during deep study protocols and ensures real-time neural alerts.
+          </p>
         </div>
       </div>
+      <div className="absolute -right-10 -top-10 bg-blue-500/5 w-40 h-40 rounded-full blur-3xl" />
     </div>
   </div>
 );
@@ -994,56 +990,86 @@ const DashboardView: React.FC<{
   });
 
   return (
-    <div className="max-w-5xl mx-auto p-4 animate-in slide-in-from-bottom-2 duration-500">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-900 rounded-2xl p-5 text-white relative overflow-hidden shadow-xl">
+    <div className="max-w-7xl mx-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/10 group">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             <div className="relative z-10">
-              <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase border border-white/5 mb-3 inline-block">{schedule.name}</span>
-              <h2 className="text-lg font-black mb-1 uppercase tracking-tight">{currentSession ? `${currentSession.subject} Active` : "System Standby"}</h2>
-              <p className="text-slate-400 text-[10px] mb-4">{currentSession ? `Current task active until ${currentSession.endTime}.` : "No active protocols scheduled."}</p>
-              <div className="flex gap-2">
+              <span className="bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-[10px] font-mono font-bold tracking-[0.3em] uppercase border border-blue-500/20 mb-6 inline-block">{schedule.name}</span>
+              <h2 className="text-3xl font-display font-black mb-3 uppercase tracking-tight">{currentSession ? `${currentSession.subject} Active` : "System Standby"}</h2>
+              <p className="text-slate-400 text-sm mb-8 font-medium leading-relaxed max-w-md">{currentSession ? `Current task active until ${currentSession.endTime}. Neural pathways optimized for maximum retention.` : "No active protocols scheduled. System in low-power monitoring mode."}</p>
+              <div className="flex gap-4">
                 {currentSession && (
-                  <button onClick={() => onStartTutor(currentSession.subject)} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 text-[10px] uppercase">
-                    <Zap size={12} fill="currentColor" /> Neural Tutor
+                  <button onClick={() => onStartTutor(currentSession.subject)} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-500 transition-all hover:scale-105 active:scale-95">
+                    <Zap size={16} fill="currentColor" /> Neural Tutor
                   </button>
                 )}
-                <button onClick={onGoToEditor} className="bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] border border-white/5 uppercase">Modify</button>
+                <button onClick={onGoToEditor} className="bg-white/5 text-white px-8 py-4 rounded-2xl font-black text-xs border border-white/10 uppercase tracking-widest hover:bg-white/10 transition-all hover:scale-105 active:scale-95">Modify Protocol</button>
               </div>
             </div>
-            <BrainCircuit size={60} className="absolute -right-4 -bottom-4 text-white opacity-5 pointer-events-none" />
+            <BrainCircuit size={160} className="absolute -right-10 -bottom-10 text-blue-500 opacity-10 pointer-events-none group-hover:scale-110 group-hover:rotate-12 transition-all duration-1000" />
           </div>
-          <section>
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Today's Sequence — {currentDay}</h3>
-            <div className="space-y-2">
+          <section className="bg-slate-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-[11px] font-mono font-bold text-slate-500 uppercase tracking-[0.4em]">Current Sequence — {currentDay}</h3>
+              <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <span className="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-widest">Live Sync</span>
+              </div>
+            </div>
+            <div className="space-y-4">
               {sortedSessions.map((s: any) => (
-                <div key={s.id} className="bg-white p-2.5 rounded-xl border border-slate-100 flex items-center justify-between shadow-sm group hover:border-blue-400 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm text-white shadow-sm ${SUBJECT_INFO[s.subject as Subject].color}`}>{SUBJECT_INFO[s.subject as Subject].icon}</div>
+                <motion.div 
+                  key={s.id} 
+                  whileHover={{ x: 8, scale: 1.01 }}
+                  className="bg-slate-900/60 p-5 rounded-[2rem] border border-white/5 flex items-center justify-between group/item hover:bg-white/10 hover:border-blue-500/30 transition-all cursor-pointer shadow-lg"
+                  onClick={() => onStartTutor(s.subject)}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-2xl text-white shadow-xl ${SUBJECT_INFO[s.subject as Subject].color} group-hover/item:scale-110 transition-transform duration-500`}>
+                      {SUBJECT_INFO[s.subject as Subject].icon}
+                    </div>
                     <div>
-                      <h4 className="font-bold text-[11px] text-slate-800">{s.subject}</h4>
-                      <p className="text-slate-400 text-[8px] font-black uppercase">{s.startTime} — {s.endTime}</p>
+                      <h4 className="font-display font-black text-lg text-white tracking-tight uppercase">{s.subject}</h4>
+                      <p className="text-slate-500 text-[10px] font-mono font-bold uppercase mt-1 tracking-[0.3em]">{s.startTime} — {s.endTime}</p>
                     </div>
                   </div>
-                  <button onClick={() => onStartTutor(s.subject)} className="p-1.5 rounded-lg bg-slate-50 text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all"><ChevronRight size={14} /></button>
-                </div>
+                  <div className="p-3 rounded-2xl bg-white/5 text-slate-500 group-hover/item:bg-blue-600 group-hover/item:text-white transition-all shadow-inner">
+                    <ChevronRight size={20} />
+                  </div>
+                </motion.div>
               ))}
-              {sortedSessions.length === 0 && <p className="text-slate-300 text-[9px] text-center py-4 uppercase font-black">No nodes scheduled</p>}
+              {sortedSessions.length === 0 && (
+                <div className="py-16 text-center space-y-4 bg-slate-900/40 rounded-[2.5rem] border border-white/5 border-dashed">
+                  <div className="w-16 h-16 rounded-[2rem] bg-white/5 mx-auto flex items-center justify-center text-slate-700 shadow-inner">
+                    <Activity size={24} />
+                  </div>
+                  <p className="text-slate-600 text-[11px] uppercase font-mono font-bold tracking-[0.3em]">No active nodes detected</p>
+                </div>
+              )}
             </div>
           </section>
         </div>
-        <aside className="space-y-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-md">
-            <h4 className="text-[9px] font-black mb-3 flex items-center gap-2 text-slate-400 uppercase tracking-widest"><BookOpen size={12} className="text-blue-500" /> Subject Nodes</h4>
-            <div className="grid grid-cols-2 gap-1.5">
+        <aside className="space-y-8">
+          <section className="bg-slate-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 shadow-2xl">
+            <h4 className="text-[11px] font-mono font-bold mb-8 flex items-center gap-3 text-slate-500 uppercase tracking-[0.4em]">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 shadow-inner"><BookOpen size={16} /></div>
+              Neural Nodes
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
               {SUBJECTS.map(s => (
-                <button key={s} onClick={() => onStartTutor(s)} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-50 transition-all text-left">
-                  <span className="text-sm">{SUBJECT_INFO[s].icon}</span>
-                  <span className="font-bold text-slate-700 text-[9px] truncate">{s}</span>
+                <button 
+                  key={s} 
+                  onClick={() => onStartTutor(s)} 
+                  className="flex flex-col items-center gap-4 p-5 rounded-[2rem] bg-slate-900/60 border border-white/5 hover:bg-white/10 hover:border-blue-500/30 transition-all group shadow-lg"
+                >
+                  <span className="text-3xl group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-500">{SUBJECT_INFO[s].icon}</span>
+                  <span className="font-display font-black text-white text-[11px] uppercase tracking-widest truncate w-full text-center">{s}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         </aside>
       </div>
     </div>
@@ -1055,58 +1081,109 @@ const EditorView: React.FC<any> = ({schedule, onAdd, onRemove}) => {
   const [subject, setSubject] = useState<Subject>('Math');
   const [start, setStart] = useState('09:00');
   const [end, setEnd] = useState('10:30');
+  
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-md mb-4">
-        <h2 className="text-xs font-black text-slate-800 mb-4 uppercase tracking-widest">Protocol Editor: {schedule.name}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
-          <div className="space-y-1">
-            <label className="text-[8px] font-black text-slate-400 uppercase ml-1">Subject</label>
-            <select value={subject} onChange={e => setSubject(e.target.value as Subject)} className="w-full bg-slate-50 p-1.5 rounded-lg border-none font-bold text-xs outline-none appearance-none">
-              {SUBJECTS.map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[8px] font-black text-slate-400 uppercase ml-1">Day</label>
-            <select value={day} onChange={e => setDay(e.target.value as DayOfWeek)} className="w-full bg-slate-50 p-1.5 rounded-lg border-none font-bold text-xs outline-none appearance-none">
-              {DAYS.map(d => <option key={d}>{d}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            <div className="space-y-1">
-              <label className="text-[8px] font-black text-slate-400 uppercase text-center block">Start</label>
-              <input type="time" value={start} onChange={e => setStart(e.target.value)} className="w-full bg-slate-50 p-1.5 rounded-lg border-none font-bold text-center text-xs outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[8px] font-black text-slate-400 uppercase text-center block">End</label>
-              <input type="time" value={end} onChange={e => setEnd(e.target.value)} className="w-full bg-slate-50 p-1.5 rounded-lg border-none font-bold text-center text-xs outline-none" />
+    <div className="max-w-7xl mx-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="bg-slate-900/60 backdrop-blur-xl p-10 rounded-[3rem] border border-white/5 shadow-2xl mb-10 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+        <h2 className="text-[11px] font-mono font-bold text-slate-500 mb-10 uppercase tracking-[0.4em] flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 shadow-inner"><Settings size={16} /></div>
+          Protocol Editor: <span className="text-blue-400">{schedule.name}</span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end relative z-10">
+          <div className="space-y-3">
+            <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest ml-2">Subject</label>
+            <div className="relative">
+              <select 
+                value={subject} 
+                onChange={e => setSubject(e.target.value as Subject)} 
+                className="w-full bg-slate-900/80 p-4 rounded-[1.5rem] border border-white/10 font-display font-bold text-sm text-white outline-none appearance-none focus:border-blue-500 transition-all shadow-inner pl-12"
+              >
+                {SUBJECTS.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
+              </select>
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                {SUBJECT_INFO[subject].icon}
+              </div>
             </div>
           </div>
-          <button onClick={() => onAdd({ subject, day, startTime: start, endTime: end })} className="bg-blue-600 text-white p-2 rounded-lg font-bold text-[10px] shadow-sm uppercase">Add Node</button>
+          <div className="space-y-3">
+            <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest ml-2">Day</label>
+            <div className="relative">
+              <select 
+                value={day} 
+                onChange={e => setDay(e.target.value as DayOfWeek)} 
+                className="w-full bg-slate-900/80 p-4 rounded-[1.5rem] border border-white/10 font-display font-bold text-sm text-white outline-none appearance-none focus:border-blue-500 transition-all shadow-inner pl-12"
+              >
+                {DAYS.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
+              </select>
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                <Calendar size={16} />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest text-center block">Start</label>
+              <input 
+                type="time" 
+                value={start} 
+                onChange={e => setStart(e.target.value)} 
+                className="w-full bg-slate-900/80 p-4 rounded-[1.5rem] border border-white/10 font-mono font-bold text-center text-sm text-white outline-none focus:border-blue-500 transition-all shadow-inner" 
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest text-center block">End</label>
+              <input 
+                type="time" 
+                value={end} 
+                onChange={e => setEnd(e.target.value)} 
+                className="w-full bg-slate-900/80 p-4 rounded-[1.5rem] border border-white/10 font-mono font-bold text-center text-sm text-white outline-none focus:border-blue-500 transition-all shadow-inner" 
+              />
+            </div>
+          </div>
+          <button 
+            onClick={() => onAdd({ subject, day, startTime: start, endTime: end })} 
+            className="bg-blue-600 text-white p-4 rounded-[1.5rem] font-black text-xs shadow-xl shadow-blue-500/20 uppercase tracking-widest hover:bg-blue-500 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Plus size={16} /> Add Node
+          </button>
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden overflow-x-auto">
-        <table className="w-full text-left text-[11px]">
-          <tbody className="divide-y divide-slate-100">
-            {DAYS.map(d => (
-              <tr key={d} className="group hover:bg-slate-50/50">
-                <td className="px-3 py-2.5 font-black text-slate-800 w-20 align-top uppercase text-[9px] tracking-tighter">{d}</td>
-                <td className="px-3 py-2.5 flex flex-wrap gap-1">
-                  {schedule.sessions.filter((s:any) => s.day === d).map((s:any) => (
-                    <div key={s.id} className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
-                      <span className="font-bold text-slate-700 text-[9px]">{s.subject}</span>
-                      <span className="text-[7px] text-slate-400">{s.startTime}</span>
-                      <button onClick={() => onRemove(s.id)} className="text-slate-300 hover:text-red-500"><X size={10} /></button>
-                    </div>
-                  ))}
-                  {schedule.sessions.filter((s:any) => s.day === d).length === 0 && (
-                    <span className="text-slate-300 text-[8px] uppercase font-bold italic py-1">Idle</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left">
+            <tbody className="divide-y divide-white/5">
+              {DAYS.map(d => (
+                <tr key={d} className="group hover:bg-white/5 transition-colors">
+                  <td className="px-10 py-8 font-display font-black text-white w-40 align-top uppercase text-[11px] tracking-[0.3em] border-r border-white/5">{d}</td>
+                  <td className="px-10 py-8 flex flex-wrap gap-4">
+                    {schedule.sessions.filter((s:any) => s.day === d).map((s:any) => (
+                      <motion.div 
+                        key={s.id} 
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="flex items-center gap-4 bg-slate-900/80 border border-white/10 px-5 py-3 rounded-[1.5rem] group/item hover:border-blue-500/50 transition-all shadow-lg"
+                      >
+                        <span className="font-display font-black text-white text-sm uppercase tracking-tight">{s.subject}</span>
+                        <span className="text-[10px] font-mono font-bold text-slate-500 tracking-[0.2em]">{s.startTime}</span>
+                        <button 
+                          onClick={() => onRemove(s.id)} 
+                          className="text-slate-600 hover:text-red-400 transition-colors ml-2 bg-white/5 p-1.5 rounded-lg hover:bg-red-500/10"
+                        >
+                          <X size={14} />
+                        </button>
+                      </motion.div>
+                    ))}
+                    {schedule.sessions.filter((s:any) => s.day === d).length === 0 && (
+                      <span className="text-slate-700 text-[11px] uppercase font-mono font-bold tracking-[0.4em] py-3">System Idle</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -1128,15 +1205,28 @@ const TutorView: React.FC<{
 
   if (!activeSubject) {
     return (
-      <div className="min-h-full flex flex-col items-center justify-start sm:justify-center p-6 text-center bg-white overflow-y-auto">
-        <div className="bg-slate-900 p-3 rounded-xl mb-4 text-blue-500 shadow-md animate-pulse mt-8 sm:mt-0"><BrainCircuit size={28} /></div>
-        <h2 className="text-[10px] font-black text-slate-800 mb-5 uppercase tracking-widest">Select AI Specialist</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl px-2 pb-12">
+      <div className="min-h-full flex flex-col items-center justify-start sm:justify-center p-8 text-center bg-slate-950 overflow-y-auto relative">
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:40px_40px]" />
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-blue-600/10 p-6 rounded-[2.5rem] mb-10 text-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.15)] border border-blue-500/20 animate-pulse mt-8 sm:mt-0 relative z-10"
+        >
+          <BrainCircuit size={56} />
+        </motion.div>
+        <h2 className="text-[13px] font-display font-black text-white mb-12 uppercase tracking-[0.6em] relative z-10">Select Neural Interface</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-4xl px-4 pb-12 relative z-10">
           {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-blue-500 hover:shadow-lg transition-all flex flex-col items-center gap-2 group active:scale-95">
-              <span className="text-2xl group-hover:scale-110 transition-transform">{SUBJECT_INFO[s].icon}</span>
-              <span className="font-black text-slate-800 text-[9px] tracking-tight uppercase">{s}</span>
-            </button>
+            <motion.button 
+              key={s} 
+              whileHover={{ scale: 1.05, y: -8 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveSubject(s)} 
+              className="bg-slate-900/60 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 hover:border-blue-500/50 hover:bg-white/10 transition-all flex flex-col items-center gap-5 group shadow-2xl"
+            >
+              <span className="text-5xl group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">{SUBJECT_INFO[s].icon}</span>
+              <span className="font-display font-black text-white text-[11px] tracking-widest uppercase">{s}</span>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -1151,38 +1241,51 @@ const TutorView: React.FC<{
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Could add a toast here
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row bg-white animate-in zoom-in-95 duration-500">
-      <div className="w-full md:w-48 bg-slate-50 border-r border-slate-100 p-4 flex flex-col shrink-0 overflow-y-auto custom-scrollbar max-h-[30vh] md:max-h-full">
-        <div>
-          <button onClick={() => setActiveSubject(null as any)} className="mb-4 group p-1 hover:bg-slate-200 rounded-md transition-all flex items-center gap-1.5 font-black text-slate-400 text-[8px] tracking-widest uppercase">
-            <ChevronLeft size={10} /> Back
+    <div className="h-full flex flex-col md:flex-row bg-slate-950 animate-in fade-in duration-700">
+      <div className="w-full md:w-80 bg-slate-900/60 backdrop-blur-xl border-r border-white/5 p-8 flex flex-col shrink-0 overflow-y-auto custom-scrollbar max-h-[35vh] md:max-h-full relative z-20 shadow-2xl">
+        <div className="flex-1">
+          <button onClick={() => setActiveSubject(null as any)} className="mb-10 group p-3 hover:bg-white/5 rounded-2xl transition-all flex items-center gap-3 font-mono font-bold text-slate-500 text-[11px] tracking-[0.3em] uppercase border border-transparent hover:border-white/5">
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Disconnect
           </button>
-          <div className="mb-5 text-center">
-            <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-xl shadow-sm mb-2 ring-1 ring-white ${SUBJECT_INFO[activeSubject as Subject].color} text-white`}>{SUBJECT_INFO[activeSubject as Subject].icon}</div>
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-tighter">{activeSubject}</h3>
-            <p className="text-blue-500 text-[6px] font-black uppercase tracking-widest mt-0.5 opacity-40">Active Link</p>
+          <div className="mb-12 text-center">
+            <div className={`w-24 h-24 rounded-[2rem] mx-auto flex items-center justify-center text-5xl shadow-[0_0_30px_rgba(0,0,0,0.3)] mb-6 ring-1 ring-white/10 ${SUBJECT_INFO[activeSubject as Subject].color} text-white`}>{SUBJECT_INFO[activeSubject as Subject].icon}</div>
+            <h3 className="text-2xl font-display font-black text-white uppercase tracking-tight">{activeSubject}</h3>
+            <div className="flex items-center justify-center gap-3 mt-4 bg-blue-500/10 py-2 px-4 rounded-full border border-blue-500/20 inline-flex">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+              <p className="text-blue-400 text-[9px] font-mono font-bold uppercase tracking-[0.4em]">Neural Link Active</p>
+            </div>
           </div>
-          <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 text-center space-y-1.5">
-            <div className="text-lg font-black text-slate-900 tracking-tighter tabular-nums">{formatTime(timer.timeLeft)}</div>
-            <div className="flex justify-center gap-1">
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: !t.isActive}))} className={`p-1 rounded-md transition-all ${timer.isActive ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white shadow-blue-500/20 shadow'}`}>
-                {timer.isActive ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+          <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center space-y-6 shadow-inner relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+            <div className="text-4xl font-mono font-black text-white tracking-tighter tabular-nums drop-shadow-lg">{formatTime(timer.timeLeft)}</div>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => setTimer((t:any) => ({...t, isActive: !t.isActive}))} 
+                className={`p-4 rounded-2xl transition-all shadow-xl ${timer.isActive ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500 hover:scale-105 active:scale-95'}`}
+              >
+                {timer.isActive ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
               </button>
-              <button onClick={() => setTimer((t:any) => ({...t, isActive: false, timeLeft: 25 * 60, mode: 'study'}))} className="p-1 bg-slate-100 text-slate-400 rounded-md hover:bg-slate-200"><RotateCcw size={12} /></button>
+              <button 
+                onClick={() => setTimer((t:any) => ({...t, isActive: false, timeLeft: 25 * 60, mode: 'study'}))} 
+                className="p-4 bg-white/5 text-slate-400 rounded-2xl hover:bg-white/10 hover:text-white transition-all border border-transparent hover:border-white/5"
+                title="Reset Timer"
+              >
+                <RotateCcw size={20} />
+              </button>
             </div>
           </div>
         </div>
       </div>
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 custom-scrollbar bg-[radial-gradient(#f1f5f9_1px,transparent_1px)] [background-size:12px_12px]">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:32px_32px]" />
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar relative z-10">
           {history[activeSubject].map((msg:any) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
-              <div className={`max-w-[90%] sm:max-w-[80%] rounded-lg px-2.5 py-1.5 shadow-sm relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10' : 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'}`}>
-                <div className="leading-relaxed text-[11px] font-medium markdown-body">
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-500`}>
+              <div className={`max-w-[90%] sm:max-w-[85%] rounded-[2rem] px-6 py-5 shadow-2xl relative group ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/20' : 'bg-slate-900/80 backdrop-blur-md border border-white/10 text-slate-200 rounded-tl-none'}`}>
+                <div className="leading-relaxed text-[15px] font-medium markdown-body">
                   <ReactMarkdown 
                     remarkPlugins={[remarkMath, remarkGfm]} 
                     rehypePlugins={[rehypeKatex]}
@@ -1203,15 +1306,17 @@ const TutorView: React.FC<{
                     {msg.content}
                   </ReactMarkdown>
                 </div>
-                <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-black/5">
-                  <div className={`flex items-center gap-1 opacity-20 text-[5px] font-black uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><Clock size={5} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/5">
+                  <div className={`flex items-center gap-2 opacity-40 text-[9px] font-mono font-bold uppercase tracking-widest ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <Clock size={10} /> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                   {msg.role === 'model' && (
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleCopy(msg.content)} className="p-1 hover:bg-black/5 rounded text-slate-400" title="Copy Markdown">
-                        <Copy size={10} />
+                      <button onClick={() => handleCopy(msg.content)} className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all" title="Copy Markdown">
+                        <Copy size={16} />
                       </button>
-                      <button onClick={() => onSave(activeSubject, msg.content)} className="p-1 hover:bg-black/5 rounded text-blue-500" title="Save to Vault">
-                        <Bookmark size={10} />
+                      <button onClick={() => onSave(activeSubject, msg.content)} className="p-2 hover:bg-blue-500/20 rounded-xl text-blue-400 hover:text-blue-300 transition-all" title="Save to Vault">
+                        <Bookmark size={16} />
                       </button>
                     </div>
                   )}
@@ -1221,29 +1326,40 @@ const TutorView: React.FC<{
           ))}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-slate-100 border border-slate-200 rounded-lg rounded-tl-none px-2 py-1 shadow-sm flex gap-0.5">
-                <div className="w-0.5 h-0.5 bg-blue-300 rounded-full animate-bounce"></div>
-                <div className="w-0.5 h-0.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                <div className="w-0.5 h-0.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+              <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-[2rem] rounded-tl-none px-6 py-5 shadow-2xl flex gap-2 items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.15s] shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.3s] shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
-        <div className="p-2 bg-white/95 border-t border-slate-100 safe-bottom">
-           <form className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 focus-within:border-blue-400 focus-within:bg-white transition-all shadow-sm" 
+        <div className="p-6 bg-slate-900/80 backdrop-blur-xl border-t border-white/5 safe-bottom relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+           <form className="flex items-center gap-4 bg-black/40 p-2.5 rounded-[2rem] border border-white/10 focus-within:border-blue-500/50 focus-within:bg-white/5 transition-all shadow-inner" 
             onSubmit={(e) => {
               e.preventDefault();
               if (!input.trim() || isTyping) return;
               onSend(activeSubject, input);
               setInput('');
             }}>
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} disabled={isTyping} placeholder={`Neural prompt for ${activeSubject}...`} className="flex-1 bg-transparent px-2 py-1 outline-none font-bold text-slate-800 placeholder:text-slate-300 disabled:opacity-50 text-[11px]" />
-            <button type="submit" disabled={!input.trim() || isTyping} className="bg-blue-600 text-white p-1.5 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md active:scale-95 shrink-0">
-              <Play size={12} fill="currentColor" />
+            <input 
+              type="text" 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              disabled={isTyping} 
+              placeholder={`Neural prompt for ${activeSubject}...`} 
+              className="flex-1 bg-transparent px-5 py-3 outline-none font-display font-bold text-white placeholder:text-slate-600 disabled:opacity-50 text-[15px]" 
+            />
+            <button 
+              type="submit" 
+              disabled={!input.trim() || isTyping} 
+              className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-500 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20 active:scale-95 shrink-0"
+            >
+              <Play size={16} fill="currentColor" />
             </button>
           </form>
-          <p className="text-[5px] font-black text-slate-200 uppercase tracking-widest mt-1 text-center">Protocol Synchronized</p>
+          <p className="text-[7px] font-mono font-bold text-slate-700 uppercase tracking-[0.4em] mt-3 text-center">Neural Protocol Synchronized</p>
         </div>
       </div>
     </div>
@@ -1258,81 +1374,84 @@ const VaultView: React.FC<{ notes: SavedNote[], onDelete: (id: string) => void }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `MedQuest_Note_${note.subject}_${new Date(note.timestamp).toISOString().split('T')[0]}.md`;
+    a.download = `Neural_Vault_${note.subject}_${new Date(note.timestamp).toISOString().split('T')[0]}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 animate-in fade-in duration-500 h-full flex flex-col">
-      <div className="flex justify-between items-end mb-6">
+    <div className="max-w-7xl mx-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
+      <div className="flex justify-between items-end mb-10">
         <div>
-          <h2 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Knowledge Vault</h2>
-          <p className="text-slate-400 text-[9px] uppercase tracking-widest">Stored Intelligence</p>
+          <h2 className="text-3xl font-display font-black text-white tracking-tight uppercase">Knowledge Vault</h2>
+          <p className="text-slate-500 text-[10px] uppercase font-mono font-bold tracking-[0.4em] mt-2">Stored Intelligence Fragments</p>
         </div>
-        <div className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
-          <span className="text-[10px] font-black text-blue-600 uppercase">{notes.length} Fragments</span>
+        <div className="bg-blue-600/10 px-5 py-3 rounded-2xl border border-blue-500/20 shadow-lg">
+          <span className="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">{notes.length} Active Nodes</span>
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
-        <div className="md:col-span-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 min-h-0">
+        <div className="md:col-span-1 overflow-y-auto custom-scrollbar space-y-4 pr-4">
           {notes.map(note => (
-            <button 
+            <motion.button 
               key={note.id} 
+              layoutId={note.id}
               onClick={() => setSelectedNote(note)}
-              className={`w-full text-left p-3 rounded-xl border transition-all group relative ${selectedNote?.id === note.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white border-slate-100 hover:border-blue-300 shadow-sm'}`}
+              className={`w-full text-left p-6 rounded-[2.5rem] border transition-all duration-500 group relative shadow-xl ${selectedNote?.id === note.id ? 'bg-blue-600 border-blue-500 text-white shadow-blue-500/30' : 'bg-slate-900/40 backdrop-blur-xl border-white/5 text-slate-400 hover:border-blue-500/30 hover:bg-white/5'}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs">{SUBJECT_INFO[note.subject as Subject].icon}</span>
-                <span className={`text-[8px] font-black uppercase tracking-widest ${selectedNote?.id === note.id ? 'text-blue-100' : 'text-slate-400'}`}>{note.subject}</span>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-2xl">{SUBJECT_INFO[note.subject as Subject].icon}</span>
+                <span className={`text-[10px] font-mono font-bold uppercase tracking-[0.3em] ${selectedNote?.id === note.id ? 'text-blue-100' : 'text-slate-500'}`}>{note.subject}</span>
               </div>
-              <p className={`text-[10px] font-bold line-clamp-2 leading-tight ${selectedNote?.id === note.id ? 'text-white' : 'text-slate-700'}`}>
+              <p className={`text-xs font-medium line-clamp-2 leading-relaxed ${selectedNote?.id === note.id ? 'text-white' : 'text-slate-300'}`}>
                 {note.content.substring(0, 100)}...
               </p>
-              <div className={`text-[6px] font-black uppercase mt-2 ${selectedNote?.id === note.id ? 'text-blue-200' : 'text-slate-300'}`}>
+              <div className={`text-[9px] font-mono font-bold uppercase mt-6 tracking-widest ${selectedNote?.id === note.id ? 'text-blue-200' : 'text-slate-600'}`}>
                 {new Date(note.timestamp).toLocaleDateString()}
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(note.id); if (selectedNote?.id === note.id) setSelectedNote(null); }}
-                className={`absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${selectedNote?.id === note.id ? 'hover:bg-white/20 text-white' : 'hover:bg-red-50 text-slate-300 hover:text-red-500'}`}
+                className={`absolute top-6 right-6 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all ${selectedNote?.id === note.id ? 'hover:bg-white/20 text-white' : 'hover:bg-red-500/10 text-slate-600 hover:text-red-400'}`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={16} />
               </button>
-            </button>
+            </motion.button>
           ))}
           {notes.length === 0 && (
-            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <Bookmark size={32} className="mx-auto text-slate-200 mb-2" />
-              <p className="text-[10px] font-black text-slate-300 uppercase">Vault Empty</p>
+            <div className="py-24 text-center space-y-6 bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-white/5 border-dashed shadow-2xl">
+              <div className="w-20 h-20 rounded-[2rem] bg-white/5 mx-auto flex items-center justify-center text-slate-700 shadow-inner">
+                <Database size={32} />
+              </div>
+              <p className="text-slate-500 text-[11px] uppercase font-mono font-bold tracking-[0.4em]">Vault Empty</p>
             </div>
           )}
         </div>
 
-        <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="md:col-span-2 bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col relative">
           {selectedNote ? (
             <>
-              <div className="p-4 border-bottom border-slate-50 flex justify-between items-center bg-slate-50/50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm text-white ${SUBJECT_INFO[selectedNote.subject as Subject].color}`}>
+              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-slate-900/60 relative z-10">
+                <div className="flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-3xl shadow-xl ${SUBJECT_INFO[selectedNote.subject as Subject].color} text-white`}>
                     {SUBJECT_INFO[selectedNote.subject as Subject].icon}
                   </div>
                   <div>
-                    <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{selectedNote.subject} Analysis</h3>
-                    <p className="text-[7px] font-black text-slate-400 uppercase">{new Date(selectedNote.timestamp).toLocaleString()}</p>
+                    <h3 className="text-xl font-display font-black text-white uppercase tracking-tight">{selectedNote.subject} Analysis</h3>
+                    <p className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-[0.3em] mt-1">{new Date(selectedNote.timestamp).toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleDownload(selectedNote)} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Download .md">
-                    <Download size={14} />
+                <div className="flex gap-4">
+                  <button onClick={() => handleDownload(selectedNote)} className="p-4 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all shadow-xl" title="Download .md">
+                    <Download size={18} />
                   </button>
-                  <button onClick={() => { navigator.clipboard.writeText(selectedNote.content); }} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="Copy">
-                    <Copy size={14} />
+                  <button onClick={() => { navigator.clipboard.writeText(selectedNote.content); }} className="p-4 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all shadow-xl" title="Copy">
+                    <Copy size={18} />
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                <div className="markdown-body text-xs leading-relaxed text-slate-700">
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar relative z-10">
+                <div className="markdown-body text-sm leading-relaxed text-slate-300">
                   <ReactMarkdown 
                     remarkPlugins={[remarkMath, remarkGfm]} 
                     rehypePlugins={[rehypeKatex]}
@@ -1354,13 +1473,17 @@ const VaultView: React.FC<{ notes: SavedNote[], onDelete: (id: string) => void }
                   </ReactMarkdown>
                 </div>
               </div>
+              <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:32px_32px]" />
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
-                <BrainCircuit size={32} />
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-8">
+              <div className="w-32 h-32 rounded-[3rem] bg-white/5 flex items-center justify-center text-slate-800 border border-white/5 shadow-inner">
+                <Shield size={48} />
               </div>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select a fragment to decode</h3>
+              <div>
+                <h3 className="text-2xl font-display font-black text-white uppercase tracking-tight mb-3">Secure Access Required</h3>
+                <p className="text-slate-500 text-xs font-medium max-w-sm mx-auto leading-relaxed">Select a knowledge fragment from the vault to initiate neural reconstruction and access encrypted data.</p>
+              </div>
             </div>
           )}
         </div>

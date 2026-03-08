@@ -19,72 +19,142 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3070/3070044.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #0a0a0c;
+            --bg-secondary: #141417;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
-            /* Fix for iOS momentum scrolling */
             -webkit-overflow-scrolling: touch;
         }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass {
+            background: rgba(20, 20, 23, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            background: rgba(255, 255, 255, 0.2);
         }
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .safe-top {
-            padding-top: env(safe-area-inset-top);
-        }
-        .markdown-body p {
-            margin-bottom: 0.5rem;
-        }
-        .markdown-body p:last-child {
-            margin-bottom: 0;
-        }
-        .markdown-body ul, .markdown-body ol {
-            margin-left: 1rem;
-            margin-bottom: 0.5rem;
-        }
+
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .safe-top { padding-top: env(safe-area-inset-top); }
+
+        .markdown-body p { margin-bottom: 1rem; line-height: 1.7; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body ul, .markdown-body ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-body li { margin-bottom: 0.5rem; }
+
         .katex-display {
-            margin: 0.5em 0;
+            margin: 1.5em 0;
             overflow-x: auto;
             overflow-y: hidden;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
         }
+
         .markdown-body table {
             border-collapse: collapse;
             width: 100%;
-            margin-bottom: 0.5rem;
-            font-size: 0.65rem;
-            background: white;
-            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 1rem;
             overflow: hidden;
+            border: 1px solid var(--border);
         }
         .markdown-body th, .markdown-body td {
-            border: 1px solid #e2e8f0;
-            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
             text-align: left;
         }
         .markdown-body th {
-            background-color: #f8fafc;
+            background-color: rgba(255, 255, 255, 0.05);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
         }
-        .markdown-body tr:nth-child(even) {
-            background-color: #f1f5f9;
+        .markdown-body code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2em 0.4em;
+            border-radius: 0.25rem;
+            font-size: 0.85em;
+        }
+        .markdown-body pre code {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        .markdown-body pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Scanline effect for that tech vibe */
+        .scanline::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px var(--accent-glow); }
+            50% { box-shadow: 0 0 20px var(--accent-glow); }
+            100% { box-shadow: 0 0 5px var(--accent-glow); }
+        }
+
+        .glow-active {
+            animation: pulse-glow 2s infinite;
         }
     </style>
 <script type="importmap">

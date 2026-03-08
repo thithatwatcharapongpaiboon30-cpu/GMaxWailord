@@ -31,7 +31,8 @@ export enum View {
   EDITOR = 'editor',
   DASHBOARD = 'dashboard',
   AI_TUTOR = 'ai_tutor',
-  VAULT = 'vault'
+  VAULT = 'vault',
+  AUTH = 'auth'
 }
 
 export interface SavedNote {
